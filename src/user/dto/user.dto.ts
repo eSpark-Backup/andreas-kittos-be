@@ -2,7 +2,7 @@
 // src/user/dto/create-user.dto.ts
 
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsEmail, IsOptional } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, IsOptional, IsPhoneNumber } from 'class-validator';
 
 
 export class CreateUserDto {
@@ -70,6 +70,56 @@ export class ResetPasswordwithMailDto {
   @IsString()
   password: string;
 
+}
 
- 
+
+export class SendOtpDto {
+  @ApiProperty({ description: 'Phone number to which OTP will be sent' })
+  @IsNotEmpty()
+  @IsString()
+  @IsPhoneNumber('PK', { message: 'Invalid phone number' })
+  readonly phoneNumber: string;
+}
+
+export class SendOtpDtoEmail {
+  @ApiProperty({ type: String ,default:'user@mail.com',description: 'Email to which OTP will be sent'})
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsNotEmpty({ message: 'Email cannot be empty' })
+  readonly email: string;
+}
+
+export class VerifyOtpDto {
+  @ApiProperty({ description: 'Phone number for which OTP was sent' })
+  @IsNotEmpty()
+  @IsString()
+  @IsPhoneNumber('PK', { message: 'Invalid phone number' })
+  readonly phoneNumber: string;
+
+  @ApiProperty({ description: 'OTP to be verified' })
+  @IsNotEmpty()
+  @IsString()
+  readonly otp: string;
+
+  @ApiProperty({ description: 'Hash received during OTP generation' })
+  @IsNotEmpty()
+  @IsString()
+  readonly hash: string;
+}
+
+
+export class VerifyOtpDtoEmail {
+  @ApiProperty({ type: String ,default:'user@mail.com',description: 'Email to which OTP will be sent'})
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsNotEmpty({ message: 'Email cannot be empty' })
+  readonly email: string;
+
+  @ApiProperty({ description: 'OTP to be verified' })
+  @IsNotEmpty()
+  @IsString()
+  readonly otp: string;
+
+  @ApiProperty({ description: 'Hash received during OTP generation' })
+  @IsNotEmpty()
+  @IsString()
+  readonly hash: string;
 }

@@ -5,7 +5,7 @@ export async function sendEmail(to: string, subject: string, content: string): P
     try {
       const msg = {
         to,
-        from: 'Real Buyerz <ahsansaleem@esparkconsultants.com>',
+        from: 'LaundaryApp <ahsansaleem@esparkconsultants.com>',
         subject,
         text: content,
         html: `<p>${content}</p>`,

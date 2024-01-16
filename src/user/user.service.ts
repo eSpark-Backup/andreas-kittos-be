@@ -9,24 +9,36 @@ import { sendEmail } from '../utils/function/sendEmail';
 import { JwtService } from '@nestjs/jwt';
 import * as sgMail from '@sendgrid/mail';
 import * as jwt from 'jsonwebtoken';
+import * as otpGenerator from 'otp-generator';
+import * as crypto from 'crypto';
+import * as Twilio from 'twilio';
+
+
 import { generateResponse, generateTOkenResponse } from 'src/utils/function/response';
 const TOKEN_KEY= process.env.TOKEN_KEY
 const TOKEN_EXPIRY= process.env.TOKEN_EXPIRY
+const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
+const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
+const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const token_expiry = process.env.TOKEN_EXPIRY;
 
 @Injectable()
 export class UserService {
   
+  private twilioClient: Twilio.Twilio;
 
   constructor(
     private jwtService: JwtService,
-    
 
 
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
   ) {
 
+    
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+    this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
+
   
   }
 
@@ -104,7 +116,6 @@ export class UserService {
       }
 
 
-
       const { password } = resetPasswordwithMailDto;
 
       const user = await this.usersRepo.findOne({ where: { email } });
@@ -127,7 +138,7 @@ export class UserService {
         }
       );
       
-      const passwordResetResponse = generateTOkenResponse('Password Reset', null, 'Password reset successfully');
+      const passwordResetResponse = generateTOkenResponse('Password Reset', true, 'Password reset successfully');
 
       return passwordResetResponse;
 
@@ -138,6 +149,99 @@ export class UserService {
     }
   }
 
+
+  async sendOtp(phone: string): Promise<string> {
+    const otp = otpGenerator.generate(4, {
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false,
+    });
+
+    const ttl = 5 * 60 * 1000;
+    const expires = Date.now() + ttl;
+    const data = `${phone}.${otp}.${expires}`;
+    const hash = crypto.createHmac('sha256', process.env.OTP_KEY).update(data).digest('hex');
+    const fullHash = `${hash}.${expires}`;
+    const otpp = `${otp}`;
+
+    console.log(`Your OTP is ${otp}`);
+    console.log(`Hash value is ${fullHash}`);
+    await this.twilioClient.messages.create({
+      body: otpp + ' is your Laundary App OTP. Do not share it with anyone.',
+      to: '+92' + phone,
+      from: twilioPhoneNumber,
+    });
+
+    return fullHash;
+  }
+  
+
+  async sendOtpEmail(email: string): Promise<string> {
+    const otp = otpGenerator.generate(4, {
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false,
+      specialChars: false,
+    });
+
+    const ttl = 5 * 60 * 1000;
+    const expires = Date.now() + ttl;
+    const data = `${email}.${otp}.${expires}`;
+    const hash = crypto.createHmac('sha256', process.env.OTP_KEY).update(data).digest('hex');
+    const fullHash = `${hash}.${expires}`;
+    const otpp = `${otp}`;
+
+    console.log(`Your OTP is ${otp}`);
+    console.log(`Hash value is ${fullHash}`);
+    await sendEmail(email, 'Password Reset Link', otpp);
+
+    return fullHash;
+  }
+
+  
+  async verifyOtp(phone: string, otp: string, hash: string): Promise<string> {
+    try {
+      const [hashValue, expires] = hash.split('.');
+      const now = Date.now();
+
+      if (now > parseInt(expires)) {
+        throw new Error('OTP Expired');
+      }
+
+      const data = `${phone}.${otp}.${expires}`;
+      const newCalculateHash = crypto.createHmac('sha256',process.env.OTP_KEY).update(data).digest('hex');
+
+      if (newCalculateHash === hashValue) {
+        return 'Success';
+      }
+
+      throw new Error('Invalid OTP');
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
+
+
+  async verifyOtpEmail(email: string, otp: string, hash: string): Promise<string> {
+    try {
+      const [hashValue, expires] = hash.split('.');
+      const now = Date.now();
+
+      if (now > parseInt(expires)) {
+        throw new Error('OTP Expired');
+      }
+
+      const data = `${email}.${otp}.${expires}`;
+      const newCalculateHash = crypto.createHmac('sha256',process.env.OTP_KEY).update(data).digest('hex');
+
+      if (newCalculateHash === hashValue) {
+        return 'Success';
+      }
+
+      throw new Error('Invalid OTP');
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 
 
 }

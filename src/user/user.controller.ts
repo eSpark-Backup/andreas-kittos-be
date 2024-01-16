@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto } from './dto/user.dto';
+import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, SendOtpDtoEmail, VerifyOtpDto, VerifyOtpDtoEmail } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator'
 import { Put } from '@nestjs/common';
 import { Param } from '@nestjs/common';
@@ -55,4 +55,68 @@ export class UserController {
     const updatePassword = await this.userService.resetPasswordwithMail(token, resetPasswordwithMailDto);
     return updatePassword;
   }
+
+  @Post('send-otp')
+  @swaggerDocs({
+    summary: 'Send OTP to User',
+    type: SendOtpDto,
+    goodResponse: { status: 201, description: 'OTP send Successfully' },
+    badresponse: { status: 400, description: 'Bad Request' }
+  })
+  async sendOtp(@Body() sendOtpDto: SendOtpDto) {
+    const OTP = await this.userService.sendOtp(sendOtpDto.phoneNumber);
+    return OTP
+  }
+
+
+  @Post('send-otp-email')
+  @swaggerDocs({
+    summary: 'Send OTP to User Email',
+    type: SendOtpDtoEmail,
+    goodResponse: { status: 201, description: 'OTP send Successfully' },
+    badresponse: { status: 400, description: 'Bad Request' }
+  })
+  async sendOtpEmail(@Body() sendOtpDtoEmail: SendOtpDtoEmail) {
+    const OTP = await this.userService.sendOtpEmail(sendOtpDtoEmail.email);
+    return OTP
+  }
+
+
+  @Post('verify-otp')
+  @swaggerDocs({
+    summary: 'Verify OTP to User',
+    type: VerifyOtpDto,
+    goodResponse: { status: 201, description: 'OTP Verified Successfully' },
+    badresponse: { status: 400, description: 'Bad Request' }
+  })
+  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+
+      const verificationResult = await this.userService.verifyOtp(
+        verifyOtpDto.phoneNumber,
+        verifyOtpDto.otp,
+        verifyOtpDto.hash,
+
+      );
+      return { message: verificationResult ? 'OTP verified successfully' : 'Invalid OTP' };
+  }
+
+  @Post('verify-otp-email')
+  @swaggerDocs({
+    summary: 'Verify OTP to User sent to Email',
+    type: VerifyOtpDtoEmail,
+    goodResponse: { status: 201, description: 'OTP Verified Successfully' },
+    badresponse: { status: 400, description: 'Bad Request' }
+  })
+  async verifyOtpEmail(@Body() verifyOtpDto: VerifyOtpDtoEmail) {
+
+      const verificationResult = await this.userService.verifyOtpEmail(
+        verifyOtpDto.email,
+        verifyOtpDto.otp,
+        verifyOtpDto.hash,
+
+      );
+      return { message: verificationResult ? 'OTP verified successfully' : 'Invalid OTP' };
+  }
+
+
 }
