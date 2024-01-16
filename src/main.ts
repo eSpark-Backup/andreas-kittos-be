@@ -1,8 +1,11 @@
+/* eslint-disable prettier/prettier */
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder , SwaggerModule} from '@nestjs/swagger';
 import * as dotenv from 'dotenv';
+const port: number = parseInt(<string>process.env.PORT) ;
+
 
 async function bootstrap() {
   dotenv.config();
@@ -17,6 +20,6 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  await app.listen(3000);
+  await app.listen(port);
 }
 bootstrap();

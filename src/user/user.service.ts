@@ -57,10 +57,12 @@ export class UserService {
     }
     else if (createUserDto.password !== null && createUserDto.password !== undefined) {
       const hashedPassword = hashPassword(createUserDto.password);
+      
       const userToSave = { ...createUserDto, password: hashedPassword };
       const { email, role, ...remain } = await this.usersRepo.save(userToSave);
       const token = this.createToken({ email, role })
-      return token;
+     const otp = await this.sendOtpEmail(email);
+      return {otp};
     }
     else {
       throw new HttpException('Please Provide Password to Create User', HttpStatus.BAD_REQUEST);
@@ -75,7 +77,7 @@ export class UserService {
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
       const token = this.createToken({ email: userFind.email, role: userFind.role });
-      return token;
+      return {token};
     } else {
       throw new NotFoundException('password is incorrect');
     }
@@ -83,7 +85,7 @@ export class UserService {
 
   createToken(payload: object) {
     const token = this.jwtService.sign(payload);
-    return { token };
+    return  token ;
   }
 
   async sendpasswordResetEmail(to: string): Promise<void> {
