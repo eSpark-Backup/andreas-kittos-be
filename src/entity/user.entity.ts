@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
 import { BaseEntity } from './base.entity';
 
@@ -42,4 +43,6 @@ export class Users extends BaseEntity {
   @Column({nullable:true})
   social_id: string;
 
+  @Column({ type: 'text', nullable: true })
+  password_reset_token: (() => string) | string;
 }

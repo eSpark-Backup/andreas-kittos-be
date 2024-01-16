@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { randomBytes, createHash } from 'crypto';
 
 function generateSalt(): string {
