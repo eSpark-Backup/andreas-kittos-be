@@ -17,16 +17,16 @@ import { config } from 'dotenv';
 config();
 
 import { generateResponse, generateTOkenResponse } from 'src/utils/function/response';
-const TOKEN_KEY= process.env.TOKEN_KEY
-const TOKEN_EXPIRY= process.env.TOKEN_EXPIRY
+const TOKEN_KEY = process.env.TOKEN_KEY
+const OTP_KEY = process.env.OTP_KEY
+const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
-const token_expiry = process.env.TOKEN_EXPIRY;
 
 @Injectable()
 export class UserService {
-  
+
   private twilioClient: Twilio.Twilio;
 
   constructor(
@@ -37,15 +37,15 @@ export class UserService {
     private usersRepo: Repository<Users>,
   ) {
 
-    
+
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
 
-  
+
   }
 
   async signUp(createUserDto: CreateUserDto) {
-  
+
     const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
     //if user is found and in the Database the social_id is null,which means user is already registered with email and password
     if (userFind && (createUserDto.social_id === null || createUserDto.social_id === undefined)) {
@@ -55,28 +55,27 @@ export class UserService {
     // if user is found and in the Database the social_id is not null,which means user is already registered with social_id (so it means it's social SignUP)
     else if (userFind && createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined) {
       const token = this.createToken({ email: userFind.email, role: userFind.role })
-      return {token};
+      return { token };
     }
     // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
     else if (!userFind && (createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined)) {
-      const { email, role, ...remain } = await this.usersRepo.save(createUserDto);
+      const userToSave = { ...createUserDto, is_verified: true };
+      const { email, role, ...remain } = await this.usersRepo.save(userToSave);
       const token = this.createToken({ email, role })
-      return {token};
+      return { token };
     }
 
     //if user is not found and password && Email  is not null,which means simple SignUP with email 
     else if (createUserDto.password !== null && createUserDto.password !== undefined && createUserDto.email !== null && createUserDto.email !== undefined) {
       const hashedPassword = hashPassword(createUserDto.password);
-      
+
       const userToSave = { ...createUserDto, password: hashedPassword };
       const { email, role, ...remain } = await this.usersRepo.save(userToSave);
       const token = this.createToken({ email, role })
-     const otphash = await this.sendOtpEmail(email);
-      return {otphash};
+      const otphash = await this.sendOtpEmail(email);
+      return { otphash };
     }
-    else if (createUserDto.phone_number !== null && createUserDto.phone_number !== undefined) {
 
-    }
 
     else {
       throw new HttpException('Please Provide Relevat Data to Create User', HttpStatus.BAD_REQUEST);
@@ -91,7 +90,7 @@ export class UserService {
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
       const token = this.createToken({ email: userFind.email, role: userFind.role });
-      return {token};
+      return { token };
     } else {
       throw new NotFoundException('password is incorrect');
     }
@@ -99,26 +98,30 @@ export class UserService {
 
   createToken(payload: object) {
     const token = this.jwtService.sign(payload);
-    return  token ;
+    return token;
   }
 
-  async sendpasswordResetEmail(to: string): Promise<void> {
-    const token = jwt.sign({ email: to },process.env.TOKEN_KEY, { expiresIn: process.env.TOKEN_EXPIRY });
+  async sendpasswordResetEmail(to: string) {
+    const token = jwt.sign({ email: to }, TOKEN_KEY, { expiresIn: TOKEN_EXPIRY });
     const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    console.log(link);
 
     try {
 
       await sendEmail(to, 'Password Reset Link', link);
       await this.usersRepo.update({ email: to }, { password_reset_token: token });
+      return { success: true, message: 'Password reset link sent successfully' };
 
     } catch (error) {
       throw new Error('Failed to send password reset email');
     }
   }
 
-  async resetPasswordwithMail(token: string, resetPasswordwithMailDto: ResetPasswordwithMailDto) {
+  async resetPasswordwithMail(resetPasswordwithMailDto: ResetPasswordwithMailDto) {
     try {
-      const { email, exp } = jwt.verify(token, process.env.TOKEN_KEY) as { email: string, exp?: number };
+      const { password, token } = resetPasswordwithMailDto;
+
+      const { email, exp } = jwt.verify(token, TOKEN_KEY) as { email: string, exp?: number };
 
       if (!exp) {
         return { error: 'Invalid access token' };
@@ -132,7 +135,6 @@ export class UserService {
       }
 
 
-      const { password } = resetPasswordwithMailDto;
 
       const user = await this.usersRepo.findOne({ where: { email } });
 
@@ -144,16 +146,16 @@ export class UserService {
       }
 
 
-      const hashedPassword =  hashPassword(password);
+      const hashedPassword = hashPassword(password);
 
       await this.usersRepo.update(
-        { email: email }, 
+        { email: email },
         {
           password: hashedPassword,
           password_reset_token: null,
         }
       );
-      
+
       const passwordResetResponse = generateTOkenResponse('Password Reset', true, 'Password reset successfully');
 
       return passwordResetResponse;
@@ -176,7 +178,7 @@ export class UserService {
     const ttl = 5 * 60 * 1000;
     const expires = Date.now() + ttl;
     const data = `${phone}.${otp}.${expires}`;
-    const hash = crypto.createHmac('sha256', process.env.OTP_KEY).update(data).digest('hex');
+    const hash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
     const fullHash = `${hash}.${expires}`;
     const otpp = `${otp}`;
 
@@ -190,7 +192,7 @@ export class UserService {
 
     return fullHash;
   }
-  
+
 
   async sendOtpEmail(email: string): Promise<string> {
     const otp = otpGenerator.generate(4, {
@@ -202,7 +204,7 @@ export class UserService {
     const ttl = 5 * 60 * 1000;
     const expires = Date.now() + ttl;
     const data = `${email}.${otp}.${expires}`;
-    const hash = crypto.createHmac('sha256', process.env.OTP_KEY).update(data).digest('hex');
+    const hash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
     const fullHash = `${hash}.${expires}`;
     const otpp = `${otp}`;
 
@@ -213,7 +215,7 @@ export class UserService {
     return fullHash;
   }
 
-  
+
   async verifyOtp(phone: string, otp: string, hash: string): Promise<string> {
     try {
       const [hashValue, expires] = hash.split('.');
@@ -224,7 +226,7 @@ export class UserService {
       }
 
       const data = `${phone}.${otp}.${expires}`;
-      const newCalculateHash = crypto.createHmac('sha256',process.env.OTP_KEY).update(data).digest('hex');
+      const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
 
       if (newCalculateHash === hashValue) {
         return 'Success';
@@ -247,23 +249,23 @@ export class UserService {
       }
 
       const data = `${email}.${otp}.${expires}`;
-      const newCalculateHash = crypto.createHmac('sha256',process.env.OTP_KEY).update(data).digest('hex');
+      const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
 
       if (newCalculateHash === hashValue) {
         const user = await this.usersRepo.findOne({ where: { email } });
-        if(user){
+        if (user) {
           await this.usersRepo.update(
-            { email: email }, 
+            { email: email },
             {
               is_verified: true,
             }
           );
-          const token = this.createToken({ email:user.email,role:user.role  })
+          const token = this.createToken({ email: user.email, role: user.role })
           return token;
 
 
         }
-        else{
+        else {
           throw new Error('User not found');
         }
       }

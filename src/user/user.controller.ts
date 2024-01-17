@@ -10,7 +10,7 @@ import { Param } from '@nestjs/common';
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
-  @Post('signup')
+  @Post('sign-up')
   @swaggerDocs({
     summary: 'Create a new user',
     type: CreateUserDto,
@@ -21,7 +21,7 @@ export class UserController {
     return this.userService.signUp(createUserDto);
   }
 
-  @Post('signin')
+  @Post('sign-in')
   @swaggerDocs({
     summary: 'Create a new user',
     type: LoginDto,
@@ -44,15 +44,15 @@ export class UserController {
     return sendPwEmail
   }
 
-  @Put('password-reset/:token')
+  @Put('password-reset')
   @swaggerDocs({
     summary: 'Resetting Password By Verifying Token',
     type: ResetPasswordwithMailDto,
     goodResponse: { status: 201, description: 'Password reset Successfully' },
     badresponse: { status: 400, description: 'Bad Request' }
   })
-  async resetPasswordwithMail(@Param('token') token: string, @Body() resetPasswordwithMailDto: ResetPasswordwithMailDto) {
-    const updatePassword = await this.userService.resetPasswordwithMail(token, resetPasswordwithMailDto);
+  async resetPasswordwithMail( @Body() resetPasswordwithMailDto: ResetPasswordwithMailDto) {
+    const updatePassword = await this.userService.resetPasswordwithMail(resetPasswordwithMailDto);
     return updatePassword;
   }
 

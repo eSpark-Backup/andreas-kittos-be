@@ -49,6 +49,8 @@ export class CreateUserDto {
   @IsOptional()
   readonly profile_image:string;
 
+  readonly is_verified?: boolean;
+
 }
 
 export class LoginDto {
@@ -75,6 +77,10 @@ export class ResetPasswordwithMailDto {
   @ApiProperty({ type: String })
   @IsString()
   password: string;
+
+  @ApiProperty({ type: String })
+  @IsString()
+  token: string;
 
 }
 
