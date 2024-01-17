@@ -31,7 +31,7 @@ export class Users extends BaseEntity {
   @Column()
   password: string;
 
-  @Column({ length: 15 })
+  @Column({ length: 15 ,nullable:true})
   phone_number: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
@@ -45,4 +45,5 @@ export class Users extends BaseEntity {
 
   @Column({ type: 'text', nullable: true })
   password_reset_token: (() => string) | string;
+
 }

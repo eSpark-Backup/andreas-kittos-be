@@ -28,7 +28,7 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Email cannot be empty' })
   readonly email: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ type: String})
   @IsString({ message: 'Mobile number must be a string' })
   @IsNotEmpty({ message: 'Mobile number cannot be empty' })
   @IsOptional()
@@ -45,6 +45,10 @@ export class CreateUserDto {
   @IsOptional()
   readonly social_id?: string;
 
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  readonly profile_image:string;
+
 }
 
 export class LoginDto {
@@ -57,6 +61,8 @@ export class LoginDto {
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password cannot be empty' })
   readonly password: string;
+
+ 
 }
 
 export class LinkEmailDto {

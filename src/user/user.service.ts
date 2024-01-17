@@ -12,7 +12,9 @@ import * as jwt from 'jsonwebtoken';
 import * as otpGenerator from 'otp-generator';
 import * as crypto from 'crypto';
 import * as Twilio from 'twilio';
+import { config } from 'dotenv';
 
+config();
 
 import { generateResponse, generateTOkenResponse } from 'src/utils/function/response';
 const TOKEN_KEY= process.env.TOKEN_KEY
@@ -43,29 +45,41 @@ export class UserService {
   }
 
   async signUp(createUserDto: CreateUserDto) {
+  
     const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
+    //if user is found and in the Database the social_id is null,which means user is already registered with email and password
     if (userFind && (createUserDto.social_id === null || createUserDto.social_id === undefined)) {
       throw new HttpException('email already exsist', HttpStatus.CONFLICT);
     }
-    else if (userFind && createUserDto.social_id !== null) {
+
+    // if user is found and in the Database the social_id is not null,which means user is already registered with social_id (so it means it's social SignUP)
+    else if (userFind && createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined) {
       const token = this.createToken({ email: userFind.email, role: userFind.role })
-      return token;
-    } else if (!userFind && (createUserDto.social_id !== null && createUserDto.social_id !== undefined)) {
+      return {token};
+    }
+    // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
+    else if (!userFind && (createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined)) {
       const { email, role, ...remain } = await this.usersRepo.save(createUserDto);
       const token = this.createToken({ email, role })
-      return token;
+      return {token};
     }
-    else if (createUserDto.password !== null && createUserDto.password !== undefined) {
+
+    //if user is not found and password && Email  is not null,which means simple SignUP with email 
+    else if (createUserDto.password !== null && createUserDto.password !== undefined && createUserDto.email !== null && createUserDto.email !== undefined) {
       const hashedPassword = hashPassword(createUserDto.password);
       
       const userToSave = { ...createUserDto, password: hashedPassword };
       const { email, role, ...remain } = await this.usersRepo.save(userToSave);
       const token = this.createToken({ email, role })
-     const otp = await this.sendOtpEmail(email);
-      return {otp};
+     const otphash = await this.sendOtpEmail(email);
+      return {otphash};
     }
+    else if (createUserDto.phone_number !== null && createUserDto.phone_number !== undefined) {
+
+    }
+
     else {
-      throw new HttpException('Please Provide Password to Create User', HttpStatus.BAD_REQUEST);
+      throw new HttpException('Please Provide Relevat Data to Create User', HttpStatus.BAD_REQUEST);
     }
   }
 
@@ -236,7 +250,22 @@ export class UserService {
       const newCalculateHash = crypto.createHmac('sha256',process.env.OTP_KEY).update(data).digest('hex');
 
       if (newCalculateHash === hashValue) {
-        return 'Success';
+        const user = await this.usersRepo.findOne({ where: { email } });
+        if(user){
+          await this.usersRepo.update(
+            { email: email }, 
+            {
+              is_verified: true,
+            }
+          );
+          const token = this.createToken({ email:user.email,role:user.role  })
+          return token;
+
+
+        }
+        else{
+          throw new Error('User not found');
+        }
       }
 
       throw new Error('Invalid OTP');

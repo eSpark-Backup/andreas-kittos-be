@@ -69,17 +69,7 @@ export class UserController {
   }
 
 
-  @Post('send-otp-email')
-  @swaggerDocs({
-    summary: 'Send OTP to User Email',
-    type: SendOtpDtoEmail,
-    goodResponse: { status: 201, description: 'OTP send Successfully' },
-    badresponse: { status: 400, description: 'Bad Request' }
-  })
-  async sendOtpEmail(@Body() sendOtpDtoEmail: SendOtpDtoEmail) {
-    const OTP = await this.userService.sendOtpEmail(sendOtpDtoEmail.email);
-    return OTP
-  }
+
 
 
   @Post('verify-otp')
@@ -115,7 +105,7 @@ export class UserController {
         verifyOtpDto.hash,
 
       );
-      return { message: verificationResult ? 'OTP verified successfully' : 'Invalid OTP' };
+      return { token: verificationResult  };
   }
 
 
