@@ -46,19 +46,21 @@ export class UserService {
 
   async signUp(createUserDto: CreateUserDto) {
 
+    try{
     const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
     //if user is found and in the Database the social_id is null,which means user is already registered with email and password
-    if (userFind && (createUserDto.social_id === null || createUserDto.social_id === undefined)) {
-      throw new HttpException('email already exsist', HttpStatus.CONFLICT);
-    }
-
-    // if user is found and in the Database the social_id is not null,which means user is already registered with social_id (so it means it's social SignUP)
-    else if (userFind && createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined) {
-      const token = this.createToken({ email: userFind.email, role: userFind.role })
-      return { token };
+    if (userFind) {
+      if (!createUserDto.social_id) {
+        throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+      }
+    //if user is found and in the DTO the social_id is not null,which means it's a social signup and user is already registered with email
+      if (createUserDto.social_id && createUserDto.profile_image) {
+        const token = this.createToken({ email: userFind.email, role: userFind.role });
+        return { token };
+      }
     }
     // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
-    else if (!userFind && (createUserDto.social_id !== null && createUserDto.social_id !== undefined && createUserDto.profile_image !== null && createUserDto.profile_image !== undefined)) {
+    else if (createUserDto.social_id  && createUserDto.profile_image ) {
       const userToSave = { ...createUserDto, is_verified: true };
       const { email, role, ...remain } = await this.usersRepo.save(userToSave);
       const token = this.createToken({ email, role })
@@ -66,7 +68,7 @@ export class UserService {
     }
 
     //if user is not found and password && Email  is not null,which means simple SignUP with email 
-    else if (createUserDto.password !== null && createUserDto.password !== undefined && createUserDto.email !== null && createUserDto.email !== undefined) {
+    else if (createUserDto.password  && createUserDto.email ) {
       const hashedPassword = hashPassword(createUserDto.password);
 
       const userToSave = { ...createUserDto, password: hashedPassword };
@@ -76,16 +78,23 @@ export class UserService {
       return { otphash };
     }
 
+  }
+  catch(error){
+    return { message: error.message  };
+    
+  }
 
-    else {
-      throw new HttpException('Please Provide Relevat Data to Create User', HttpStatus.BAD_REQUEST);
-    }
+  return { message: 'Something went wrong while Creating User'  };
   }
 
   async signin(loginDto: LoginDto) {
     const userFind = await this.usersRepo.findOne({ where: { email: loginDto.email } })
+    
     if (!userFind) {
-      throw new NotFoundException('email not found');
+      throw new NotFoundException('Account Not found with That Email');
+    }
+    if(userFind.is_verified === false){
+      throw new NotFoundException('Please Verify Your Email');
     }
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
