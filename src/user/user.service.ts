@@ -46,60 +46,64 @@ export class UserService {
 
   async signUp(createUserDto: CreateUserDto) {
 
-    try{
-    const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
-    //if user is found and in the Database the social_id is null,which means user is already registered with email and password
-    if (userFind) {
-      if (!createUserDto.social_id) {
-        throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+    try {
+      const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
+      //if user is found and in the Database the social_id is null,which means user is already registered with email and password
+      if (userFind) {
+        if (!createUserDto.social_id) {
+          throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+        }
+        //if user is found and in the DTO the social_id is not null,which means it's a social signup and user is already registered with email
+        if (createUserDto.social_id && createUserDto.profile_image) {
+          const token = this.createToken({ email: userFind.email, role: userFind.role });
+          return { token };
+        }
       }
-    //if user is found and in the DTO the social_id is not null,which means it's a social signup and user is already registered with email
-      if (createUserDto.social_id && createUserDto.profile_image) {
-        const token = this.createToken({ email: userFind.email, role: userFind.role });
+      // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
+      else if (createUserDto.social_id && createUserDto.profile_image) {
+        const userToSave = { ...createUserDto, is_verified: true };
+        const { email, role, ...remain } = await this.usersRepo.save(userToSave);
+        const token = this.createToken({ email, role })
         return { token };
       }
-    }
-    // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
-    else if (createUserDto.social_id  && createUserDto.profile_image ) {
-      const userToSave = { ...createUserDto, is_verified: true };
-      const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-      const token = this.createToken({ email, role })
-      return { token };
-    }
 
-    //if user is not found and password && Email  is not null,which means simple SignUP with email 
-    else if (createUserDto.password  && createUserDto.email ) {
-      const hashedPassword = hashPassword(createUserDto.password);
+      //if user is not found and password && Email  is not null,which means simple SignUP with email 
+      else if (createUserDto.password && createUserDto.email) {
+        const hashedPassword = hashPassword(createUserDto.password);
 
-      const userToSave = { ...createUserDto, password: hashedPassword };
-      const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-      const token = this.createToken({ email, role })
-      const otphash = await this.sendOtpEmail(email);
-      return { otphash };
+        const userToSave = { ...createUserDto, password: hashedPassword };
+        const { email, role, ...remain } = await this.usersRepo.save(userToSave);
+        const token = this.createToken({ email, role })
+        const otphash = await this.sendOtpEmail(email);
+        return { otphash };
+      }
+
+    }
+    catch (error) {
+      return { message: error.message };
+
     }
 
-  }
-  catch(error){
-    return { message: error.message  };
-    
-  }
-
-  return { message: 'Something went wrong while Creating User'  };
+    return { message: 'Something went wrong while Creating User' };
   }
 
   async signin(loginDto: LoginDto) {
     const userFind = await this.usersRepo.findOne({ where: { email: loginDto.email } })
-    
+
     if (!userFind) {
       throw new NotFoundException('Account Not found with That Email');
     }
-    if(userFind.is_verified === false){
-      throw new NotFoundException('Please Verify Your Email');
+    if (userFind.is_verified === false) {
+      const otphash = await this.sendOtpEmail(userFind.email);
+      const response = generateResponse('OTP Send Successfully', 'Please Verify Your Email to Continue', otphash, 'OTPHASH');
+      return response;
     }
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
       const token = this.createToken({ email: userFind.email, role: userFind.role });
-      return { token };
+      const response = generateTOkenResponse('Login', token, 'Login Successfully');
+
+      return response;
     } else {
       throw new NotFoundException('password is incorrect');
     }
@@ -113,7 +117,6 @@ export class UserService {
   async sendpasswordResetEmail(to: string) {
     const token = jwt.sign({ email: to }, TOKEN_KEY, { expiresIn: TOKEN_EXPIRY });
     const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    console.log(link);
 
     try {
 
@@ -219,7 +222,7 @@ export class UserService {
 
     console.log(`Your OTP is ${otp}`);
     console.log(`Hash value is ${fullHash}`);
-    await sendEmail(email, 'Password Reset Link', otpp);
+    await sendEmail(email, 'Verify Email OTP', otpp);
 
     return fullHash;
   }
@@ -248,7 +251,7 @@ export class UserService {
   }
 
 
-  async verifyOtpEmail(email: string, otp: string, hash: string): Promise<string> {
+  async verifyOtpEmail(email: string, otp: string, hash: string) {
     try {
       const [hashValue, expires] = hash.split('.');
       const now = Date.now();
@@ -270,7 +273,8 @@ export class UserService {
             }
           );
           const token = this.createToken({ email: user.email, role: user.role })
-          return token;
+          const response = generateTOkenResponse('Login Token', token, 'Email Verified Successfully');
+          return response;
 
 
         }
