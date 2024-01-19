@@ -4,9 +4,10 @@ import { UserService } from './user.service';
 import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, SendOtpDtoEmail, VerifyOtpDto, VerifyOtpDtoEmail } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator'
 import { Put } from '@nestjs/common';
-import { Param } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user')
+@ApiTags('User') 
 export class UserController {
   constructor(private readonly userService: UserService) { }
 

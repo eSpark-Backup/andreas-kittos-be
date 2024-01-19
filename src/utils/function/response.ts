@@ -19,3 +19,17 @@ export function  generateTOkenResponse(action, token, message) {
     };
     return { success: true, message: message, response };
   }
+
+  interface SuccessResponse {
+    data: any;
+    message: string;
+    status?:boolean;
+  }
+  
+  export function successResponse({data, message,status=true}:SuccessResponse) {
+    return {
+      status: status,
+      message: message,
+      data: data,
+    };
+  }
