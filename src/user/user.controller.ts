@@ -7,7 +7,7 @@ import { Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
 @Controller('user')
-@ApiTags('User') 
+@ApiTags('User')
 export class UserController {
   constructor(private readonly userService: UserService) { }
 
@@ -52,7 +52,7 @@ export class UserController {
     goodResponse: { status: 201, description: 'Password reset Successfully' },
     badresponse: { status: 400, description: 'Bad Request' }
   })
-  async resetPasswordwithMail( @Body() resetPasswordwithMailDto: ResetPasswordwithMailDto) {
+  async resetPasswordwithMail(@Body() resetPasswordwithMailDto: ResetPasswordwithMailDto) {
     const updatePassword = await this.userService.resetPasswordwithMail(resetPasswordwithMailDto);
     return updatePassword;
   }
@@ -82,13 +82,13 @@ export class UserController {
   })
   async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
 
-      const verificationResult = await this.userService.verifyOtp(
-        verifyOtpDto.phoneNumber,
-        verifyOtpDto.otp,
-        verifyOtpDto.hash,
+    const verificationResult = await this.userService.verifyOtp(
+      verifyOtpDto.phoneNumber,
+      verifyOtpDto.otp,
+      verifyOtpDto.hash,
 
-      );
-      return { message: verificationResult ? 'OTP verified successfully' : 'Invalid OTP' };
+    );
+    return verificationResult;
   }
 
   @Post('verify-otp-email')
@@ -100,14 +100,12 @@ export class UserController {
   })
   async verifyOtpEmail(@Body() verifyOtpDto: VerifyOtpDtoEmail) {
 
-      const verificationResult = await this.userService.verifyOtpEmail(
-        verifyOtpDto.email,
-        verifyOtpDto.otp,
-        verifyOtpDto.hash,
+    const verificationResult = await this.userService.verifyOtpEmail(
+      verifyOtpDto.email,
+      verifyOtpDto.otp,
+      verifyOtpDto.hash,
 
-      );
-      return { token: verificationResult  };
+    );
+    return verificationResult;
   }
-
-
 }

@@ -8,4 +8,15 @@ export const CONSTANT_RESPONSE = {
   RECORD_NOT_FOUND: 'record not found',
   DELETED_SUCCESSFULLY: 'deleted successfully',
   DELETE_FAILED: 'id not found',
+  JWT_TOEKN: 'recieved jwt token successfully',
+  SEND_OTP: 'OTP Send Successfully',
+  LOGIN_SUCCESS:'login Successfully',
+  PWD_RESET_SUCCESS:'Password reset link sent successfully',
+  INVALID_ACCESS_TOKEN:'Invalid access token',
+  TOKEN_EXPIRED:'Token has Expired',
+  LINK_EXPIRED_OR_INVALID:'Password reset link is expired or invalid',
+  PASSWORD_RESET:'Password reset successfully',
+  USER_NOT_FOUND:'user not found',
+  FAILED_TO_RESET:'Failed to reset password. Please try again later',
+  OTP_VARIFIED:'OTP verified successfully'
 };

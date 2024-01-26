@@ -16,7 +16,8 @@ import { config } from 'dotenv';
 
 config();
 
-import { generateResponse, generateTOkenResponse } from 'src/utils/function/response';
+import { generateResponse, generateTOkenResponse } from '../utils/function/response';
+import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 const TOKEN_KEY = process.env.TOKEN_KEY
 const OTP_KEY = process.env.OTP_KEY
 const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY
@@ -36,12 +37,8 @@ export class UserService {
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
   ) {
-
-
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
-
-
   }
 
   async signUp(createUserDto: CreateUserDto) {
@@ -56,7 +53,10 @@ export class UserService {
         //if user is found and in the DTO the social_id is not null,which means it's a social signup and user is already registered with email
         if (createUserDto.social_id && createUserDto.profile_image) {
           const token = this.createToken({ email: userFind.email, role: userFind.role });
-          return { token };
+          return {
+            data: { token },
+            message: CONSTANT_RESPONSE.JWT_TOEKN,
+          };
         }
       }
       // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
@@ -64,7 +64,10 @@ export class UserService {
         const userToSave = { ...createUserDto, is_verified: true };
         const { email, role, ...remain } = await this.usersRepo.save(userToSave);
         const token = this.createToken({ email, role })
-        return { token };
+        return {
+          data: { token },
+          message: CONSTANT_RESPONSE.JWT_TOEKN,
+        };
       }
 
       //if user is not found and password && Email  is not null,which means simple SignUP with email 
@@ -73,17 +76,16 @@ export class UserService {
 
         const userToSave = { ...createUserDto, password: hashedPassword };
         const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-        const token = this.createToken({ email, role })
         const otphash = await this.sendOtpEmail(email);
-        return { otphash };
+        return {
+          data: { otphash },
+          message: CONSTANT_RESPONSE.SEND_OTP,
+        };
       }
-
     }
     catch (error) {
-      return { message: error.message };
-
+      return { message: error.message, status: false };
     }
-
     return { message: 'Something went wrong while Creating User' };
   }
 
@@ -93,18 +95,22 @@ export class UserService {
     if (!userFind) {
       throw new NotFoundException('Account Not found with That Email');
     }
-    if (userFind.is_verified === false) {
-      const otphash = await this.sendOtpEmail(userFind.email);
-      const response = generateResponse('OTP Send Successfully', 'Please Verify Your Email to Continue', otphash, 'OTPHASH');
-      return response;
-    }
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
+      if (userFind.is_verified === false) {
+        const otphash = await this.sendOtpEmail(userFind.email);
+        return {
+          data: { otphash },
+          message: CONSTANT_RESPONSE.SEND_OTP,
+        };
+      }
       const token = this.createToken({ email: userFind.email, role: userFind.role });
-      const response = generateTOkenResponse('Login', token, 'Login Successfully');
-
-      return response;
-    } else {
+      return {
+        data: { token },
+        message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
+      };
+    }
+    else {
       throw new NotFoundException('password is incorrect');
     }
   }
@@ -122,7 +128,7 @@ export class UserService {
 
       await sendEmail(to, 'Password Reset Link', link);
       await this.usersRepo.update({ email: to }, { password_reset_token: token });
-      return { success: true, message: 'Password reset link sent successfully' };
+      return { message: CONSTANT_RESPONSE.PWD_RESET_SUCCESS };
 
     } catch (error) {
       throw new Error('Failed to send password reset email');
@@ -136,14 +142,14 @@ export class UserService {
       const { email, exp } = jwt.verify(token, TOKEN_KEY) as { email: string, exp?: number };
 
       if (!exp) {
-        return { error: 'Invalid access token' };
+        return { message: CONSTANT_RESPONSE.INVALID_ACCESS_TOKEN, status: false };
       }
 
       const expirationTime = new Date(exp * 1000);
       const currentTime = new Date();
 
       if (currentTime >= expirationTime) {
-        return { error: 'Token has Expired' };
+        return { message: CONSTANT_RESPONSE.TOKEN_EXPIRED, status: false };
       }
 
 
@@ -151,15 +157,14 @@ export class UserService {
       const user = await this.usersRepo.findOne({ where: { email } });
 
       if (!user) {
-        return { success: false, message: 'User not found' };
+        return { status: false, message: CONSTANT_RESPONSE.USER_NOT_FOUND };
       }
       if (!user.password_reset_token || user.password_reset_token !== token) {
-        return { success: false, message: 'Password reset link is expired or invalid' };
+        return { status: false, message: CONSTANT_RESPONSE.LINK_EXPIRED_OR_INVALID };
       }
 
 
       const hashedPassword = hashPassword(password);
-
       await this.usersRepo.update(
         { email: email },
         {
@@ -167,15 +172,9 @@ export class UserService {
           password_reset_token: null,
         }
       );
-
-      const passwordResetResponse = generateTOkenResponse('Password Reset', true, 'Password reset successfully');
-
-      return passwordResetResponse;
-
+      return { message: CONSTANT_RESPONSE.PASSWORD_RESET };
     } catch (error) {
-
-
-      return { success: false, message: 'Failed to reset password. Please try again later.', error };
+      return { status: false, message: CONSTANT_RESPONSE.FAILED_TO_RESET, data: error.message };
     }
   }
 
@@ -228,7 +227,7 @@ export class UserService {
   }
 
 
-  async verifyOtp(phone: string, otp: string, hash: string): Promise<string> {
+  async verifyOtp(phone: string, otp: string, hash: string): Promise<any> {
     try {
       const [hashValue, expires] = hash.split('.');
       const now = Date.now();
@@ -241,9 +240,8 @@ export class UserService {
       const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
 
       if (newCalculateHash === hashValue) {
-        return 'Success';
+        return { message: CONSTANT_RESPONSE.OTP_VARIFIED };
       }
-
       throw new Error('Invalid OTP');
     } catch (error) {
       throw new Error(error.message);
@@ -273,10 +271,7 @@ export class UserService {
             }
           );
           const token = this.createToken({ email: user.email, role: user.role })
-          const response = generateTOkenResponse('Login Token', token, 'Email Verified Successfully');
-          return response;
-
-
+          return { message: CONSTANT_RESPONSE.OTP_VARIFIED , data:{token}};
         }
         else {
           throw new Error('User not found');
@@ -288,6 +283,4 @@ export class UserService {
       throw new Error(error.message);
     }
   }
-
-
 }

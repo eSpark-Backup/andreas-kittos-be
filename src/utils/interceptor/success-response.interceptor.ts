@@ -17,7 +17,7 @@ export class SuccessResponseInterceptor implements NestInterceptor {
           ? data.message
           : 'Success';
         const modifiedResponse = successResponse({
-          data: data.data,
+          data: data.data ?? null,
           message: message,
         });
         data.hasOwnProperty('status')

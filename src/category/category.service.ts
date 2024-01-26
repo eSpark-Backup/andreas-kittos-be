@@ -10,7 +10,7 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-  ) {}
+  ) { }
 
   async create(createCategoryDto: CreateCategoryDto) {
     const createResult = await this.categoryRepository.save(createCategoryDto);
@@ -22,22 +22,22 @@ export class CategoryService {
 
   async findAll() {
     const allCategoryResult = await this.categoryRepository.find({
-      where: { is_parent: '0' },
+      where: { is_parent: '0', isDeleted: false },
     });
     return { data: allCategoryResult, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
   async findOne(id: string) {
     const allCategoryResult = await this.categoryRepository.findOne({
-      where: { id: id, is_parent: '0' },
+      where: { id: id, is_parent: '0', isDeleted: false },
     });
     const result = allCategoryResult
       ? { data: allCategoryResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-          data: allCategoryResult,
-          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-          status: false,
-        };
+        data: allCategoryResult,
+        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+        status: false,
+      };
     return result;
   }
 
@@ -57,7 +57,7 @@ export class CategoryService {
   }
 
   async remove(id: string) {
-    const { affected } = await this.categoryRepository.delete(id);
+    const { affected } = await this.categoryRepository.update(id, { isDeleted: true });
     if (affected === 1) {
       return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
     }
