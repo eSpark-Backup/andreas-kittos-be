@@ -3,11 +3,14 @@ import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Users } from '../entity/user.entity';
+import { Users } from '../entity';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Users]),
+  PassportModule.register({ defaultStrategy: 'jwt' }),
   JwtModule.register({
     secret: process.env.TOKEN_KEY || 'andreaskittos',
     signOptions: {
@@ -16,6 +19,6 @@ import { JwtModule } from '@nestjs/jwt';
   }),
   ],
   controllers: [UserController],
-  providers: [UserService]
+  providers: [UserService,JwtStrategy]
 })
 export class UserModule { }

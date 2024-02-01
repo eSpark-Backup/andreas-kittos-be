@@ -1,6 +1,7 @@
 // sub-category.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { CategoryProduct } from './category_product.entity';
 
 @Entity()
 export class Product extends BaseEntity {
@@ -26,5 +27,8 @@ export class Product extends BaseEntity {
   productImage: string;
 
   @Column({default:false})
-  isDeleted:boolean
+  isDeleted:boolean;
+
+  @OneToMany(() => CategoryProduct,categoryProduct => categoryProduct.product )
+  categoryProduct: CategoryProduct[];
 }

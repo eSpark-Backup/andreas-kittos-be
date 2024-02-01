@@ -13,22 +13,19 @@ export class Users extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column()
+  @Column({nullable:true})
   first_name: string;
 
-  @Column()
+  @Column({nullable:true})
   last_name: string;
-
-  @Column({ length: 50 })
-  user_name: string;
 
   @Column({nullable:true})
   profile_image: string;
 
-  @Column({ unique: true, length: 100 })
+  @Column({ unique: true, length: 100 ,nullable:true})
   email: string;
 
-  @Column()
+  @Column({nullable:true})
   password: string;
 
   @Column({ length: 15 ,nullable:true})

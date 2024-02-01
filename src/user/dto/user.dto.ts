@@ -18,27 +18,14 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Last name cannot be empty' })
   readonly last_name: string;
 
-  @ApiProperty({ type: String })
-  @IsString({ message: 'Last name must be a string' })
-  @IsNotEmpty({ message: 'Last name cannot be empty' })
-  readonly user_name: string;
-
   @ApiProperty({ type: String ,default:'user@mail.com'})
-  @IsEmail({}, { message: 'Invalid email format' })
-  @IsNotEmpty({ message: 'Email cannot be empty' })
   readonly email: string;
 
   @ApiProperty({ type: String})
-  @IsString({ message: 'Mobile number must be a string' })
-  @IsNotEmpty({ message: 'Mobile number cannot be empty' })
-  @IsOptional()
   readonly phone_number: string;
 
  
   @ApiProperty({ type: String ,required :false})
-  @IsString({ message: 'Password must be a string' })
-  @IsNotEmpty({ message: 'Password cannot be empty' })
-  @IsOptional()
   readonly password: string;
 
   @ApiProperty({ type: String, required: false })
@@ -55,23 +42,20 @@ export class CreateUserDto {
 
 export class LoginDto {
   @ApiProperty({ type: String })
-  @IsEmail({}, { message: 'Invalid email format' })
-  @IsNotEmpty({ message: 'Email cannot be empty' })
-  readonly email: string;
+  @IsString({ message: 'Password must be a string' })
+  @IsNotEmpty({ message: 'Password cannot be empty' })
+  readonly userCred: string;
 
   @ApiProperty({ type: String })
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password cannot be empty' })
-  readonly password: string;
-
- 
+  readonly password: string; 
 }
 
 export class LinkEmailDto {
   @ApiProperty({ type: String })
   @IsEmail()
   to: string;
-
 }
 export class ResetPasswordwithMailDto {
   @ApiProperty({ type: String })
@@ -83,7 +67,6 @@ export class ResetPasswordwithMailDto {
   token: string;
 
 }
-
 
 export class SendOtpDto {
   @ApiProperty({ description: 'Phone number to which OTP will be sent' })
@@ -134,4 +117,10 @@ export class VerifyOtpDtoEmail {
   @IsNotEmpty()
   @IsString()
   readonly hash: string;
+}
+
+export class resendEmailDto {
+  @ApiProperty({ type: String ,description:'email required'})
+  @IsEmail()
+  email: string;
 }

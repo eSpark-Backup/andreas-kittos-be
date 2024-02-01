@@ -18,5 +18,6 @@ export const CONSTANT_RESPONSE = {
   PASSWORD_RESET:'Password reset successfully',
   USER_NOT_FOUND:'user not found',
   FAILED_TO_RESET:'Failed to reset password. Please try again later',
-  OTP_VARIFIED:'OTP verified successfully'
+  OTP_VARIFIED:'OTP verified successfully',
+  RESEND_EMAIL:'Resend email send Successfully',
 };

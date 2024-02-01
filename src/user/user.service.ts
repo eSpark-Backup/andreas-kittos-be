@@ -2,7 +2,7 @@
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, LoginDto, ResetPasswordwithMailDto } from './dto/user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Users } from '../entity/user.entity';
+import { Users } from '../entity';
 import { Repository } from 'typeorm';
 import { hashPassword, verifyPassword } from '../utils/function/password';
 import { sendEmail } from '../utils/function/sendEmail';
@@ -13,10 +13,7 @@ import * as otpGenerator from 'otp-generator';
 import * as crypto from 'crypto';
 import * as Twilio from 'twilio';
 import { config } from 'dotenv';
-
 config();
-
-import { generateResponse, generateTOkenResponse } from '../utils/function/response';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 const TOKEN_KEY = process.env.TOKEN_KEY
 const OTP_KEY = process.env.OTP_KEY
@@ -32,8 +29,6 @@ export class UserService {
 
   constructor(
     private jwtService: JwtService,
-
-
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
   ) {
@@ -44,26 +39,44 @@ export class UserService {
   async signUp(createUserDto: CreateUserDto) {
 
     try {
-      const userFind = await this.usersRepo.findOne({ where: { email: createUserDto.email } })
-      //if user is found and in the Database the social_id is null,which means user is already registered with email and password
+      const userFind = await this.usersRepo.findOne({
+        where: [
+          { email: createUserDto.email },
+          { phone_number: createUserDto.phone_number }
+        ]
+      });
       if (userFind) {
+        if((createUserDto.first_name && createUserDto.last_name && createUserDto.phone_number && createUserDto.password)
+        && userFind.phone_number
+        ){
+          const hashedPassword = hashPassword(createUserDto.password);
+          const userToSave = { ...createUserDto, password: hashedPassword };
+          const { affected } = await this.usersRepo.update(userFind.id,userToSave);
+          if (affected === 1) {
+            const token = this.createToken({ id:userFind.id, role:userFind.role })
+            return {
+              data: { token },
+              message: CONSTANT_RESPONSE.JWT_TOEKN,
+            };
+          }else{
+            throw new NotFoundException('phone number not found');
+          }
+        }
         if (!createUserDto.social_id) {
           throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
         }
-        //if user is found and in the DTO the social_id is not null,which means it's a social signup and user is already registered with email
         if (createUserDto.social_id && createUserDto.profile_image) {
-          const token = this.createToken({ email: userFind.email, role: userFind.role });
+          const token = this.createToken({ id: userFind.id, role: userFind.role });
           return {
             data: { token },
             message: CONSTANT_RESPONSE.JWT_TOEKN,
           };
         }
       }
-      // if user is not found and in the Database the social_id is not null,which means it's a social signup but user is not registered yet ,remember whenver you're using social singup ,you also have to give Profileimage url in the request
       else if (createUserDto.social_id && createUserDto.profile_image) {
         const userToSave = { ...createUserDto, is_verified: true };
-        const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-        const token = this.createToken({ email, role })
+        const { id, role, ...remain } = await this.usersRepo.save(userToSave);
+        const token = this.createToken({ id, role })
         return {
           data: { token },
           message: CONSTANT_RESPONSE.JWT_TOEKN,
@@ -71,40 +84,41 @@ export class UserService {
       }
 
       //if user is not found and password && Email  is not null,which means simple SignUP with email 
-      else if (createUserDto.password && createUserDto.email) {
-        const hashedPassword = hashPassword(createUserDto.password);
-
-        const userToSave = { ...createUserDto, password: hashedPassword };
-        const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-        const otphash = await this.sendOtpEmail(email);
-        return {
-          data: { otphash },
-          message: CONSTANT_RESPONSE.SEND_OTP,
-        };
+      else if (createUserDto.password) {
+        if (createUserDto.email) {
+          const hashedPassword = hashPassword(createUserDto.password);
+          const userToSave = { ...createUserDto, password: hashedPassword };
+          const { email, role, ...remain } = await this.usersRepo.save(userToSave);
+          const otphash = await this.sendOtpEmail(email);
+          return {
+            data: { otphash },
+            message: CONSTANT_RESPONSE.SEND_OTP,
+          };
+        }
       }
     }
     catch (error) {
       return { message: error.message, status: false };
     }
-    return { message: 'Something went wrong while Creating User' };
+    throw new NotFoundException('Something went wrong while Creating User');
   }
 
   async signin(loginDto: LoginDto) {
-    const userFind = await this.usersRepo.findOne({ where: { email: loginDto.email } })
-
+    let userFind = null;   
+    if (this.isEmail(loginDto.userCred)) {
+      userFind = await this.usersRepo.findOne({ where: { email: loginDto.userCred } });
+    }else{
+      userFind = await this.usersRepo.findOne({ where: { phone_number: loginDto.userCred } });
+    }
     if (!userFind) {
       throw new NotFoundException('Account Not found with That Email');
     }
     const verifyPass = verifyPassword(loginDto.password, userFind.password);
     if (verifyPass) {
       if (userFind.is_verified === false) {
-        const otphash = await this.sendOtpEmail(userFind.email);
-        return {
-          data: { otphash },
-          message: CONSTANT_RESPONSE.SEND_OTP,
-        };
+        throw new NotFoundException('you are not varified');
       }
-      const token = this.createToken({ email: userFind.email, role: userFind.role });
+      const token = this.createToken({ id: userFind.id, role: userFind.role });
       return {
         data: { token },
         message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
@@ -123,9 +137,7 @@ export class UserService {
   async sendpasswordResetEmail(to: string) {
     const token = jwt.sign({ email: to }, TOKEN_KEY, { expiresIn: TOKEN_EXPIRY });
     const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-
     try {
-
       await sendEmail(to, 'Password Reset Link', link);
       await this.usersRepo.update({ email: to }, { password_reset_token: token });
       return { message: CONSTANT_RESPONSE.PWD_RESET_SUCCESS };
@@ -178,8 +190,28 @@ export class UserService {
     }
   }
 
+  async resendEmail(email: any) {
+    const userFind = await this.usersRepo.findOne({ where: { email } });
+    if(userFind ){
+      if (!userFind.is_verified) {
+        const otphash = await this.sendOtpEmail(email);
+        return {
+          data: { otphash },
+          message: CONSTANT_RESPONSE.RESEND_EMAIL,
+        }; 
+      }else{
+        throw new Error('email is already varified');
+      }
+    }else{
+      throw new Error('email is not exsist');
+    }
+  }
 
   async sendOtp(phone: string): Promise<string> {
+    const userFind = await this.usersRepo.findOne({ where: { phone_number: phone, is_verified: true } })
+    if (userFind) {
+      throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+    }
     const otp = otpGenerator.generate(4, {
       lowerCaseAlphabets: false,
       upperCaseAlphabets: false,
@@ -200,7 +232,6 @@ export class UserService {
       to: '+92' + phone,
       from: twilioPhoneNumber,
     });
-
     return fullHash;
   }
 
@@ -231,15 +262,16 @@ export class UserService {
     try {
       const [hashValue, expires] = hash.split('.');
       const now = Date.now();
-
       if (now > parseInt(expires)) {
         throw new Error('OTP Expired');
       }
-
       const data = `${phone}.${otp}.${expires}`;
       const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
-
       if (newCalculateHash === hashValue) {
+        const user = new Users();
+        user.phone_number = phone;
+        user.is_verified = true;
+        await this.usersRepo.save(user);
         return { message: CONSTANT_RESPONSE.OTP_VARIFIED };
       }
       throw new Error('Invalid OTP');
@@ -270,8 +302,8 @@ export class UserService {
               is_verified: true,
             }
           );
-          const token = this.createToken({ email: user.email, role: user.role })
-          return { message: CONSTANT_RESPONSE.OTP_VARIFIED , data:{token}};
+          const token = this.createToken({ id: user.id, role: user.role })
+          return { message: CONSTANT_RESPONSE.OTP_VARIFIED, data: { token } };
         }
         else {
           throw new Error('User not found');
@@ -282,5 +314,23 @@ export class UserService {
     } catch (error) {
       throw new Error(error.message);
     }
+  }
+
+  async validateUser(payload: any) {
+    const { id } = payload;
+    const findUser = await this.usersRepo.find({
+      where: { id: id },
+    });
+    return findUser;
+  }
+
+  isPhoneNumber(input) {
+    const phoneNumberPattern = /^(\+\d{1,3})?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/;
+    return phoneNumberPattern.test(input.toString());
+  }
+
+  isEmail(input: any) {
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailPattern.test(input);
   }
 }

@@ -5,9 +5,8 @@ import { MulterModule } from '@nestjs/platform-express';
 import * as multer from 'multer';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Product } from '../entity/product.entity';
-import { Category } from '../entity/category.entity';
-import { CategoryProduct } from '../entity/category_product.entity';
+import { Product, Category, CategoryProduct } from '../entity';
+import { JwtService } from '@nestjs/jwt';
 
 
 @Module({
@@ -15,9 +14,9 @@ import { CategoryProduct } from '../entity/category_product.entity';
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
-  TypeOrmModule.forFeature([Product,Category,CategoryProduct])
+    TypeOrmModule.forFeature([Product, Category, CategoryProduct])
   ],
   controllers: [ProductController],
-  providers: [ProductService, BackblazeService],
+  providers: [ProductService, BackblazeService, JwtService],
 })
 export class ProductModule { }

@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
-import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { CategoryProduct } from './category_product.entity';
 
 @Entity({ name: 'category' })
 export class Category extends BaseEntity {
@@ -17,6 +18,9 @@ export class Category extends BaseEntity {
   is_parent: string;
 
   @Column({default:false})
-  isDeleted:boolean
+  isDeleted:boolean;
+
+  @OneToMany(() => CategoryProduct,categoryProduct => categoryProduct.category )
+  categoryProduct: CategoryProduct[];
 
 }

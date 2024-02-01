@@ -4,9 +4,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { BackblazeService } from '../backblaze/backblaze.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product } from '../entity/product.entity';
-import { Category } from '../entity/category.entity';
-import { CategoryProduct } from '../entity/category_product.entity';
+import { Product, Category, CategoryProduct } from '../entity';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import * as url from 'url';
 import * as path from 'path';
@@ -19,30 +17,39 @@ export class ProductService {
     private productRepository: Repository<Product>,
     @InjectRepository(CategoryProduct)
     private productCategoryRepository: Repository<CategoryProduct>,
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
   ) { }
 
   async create(file: any, createProductDto: CreateProductDto) {
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
-    const category = new Category();
-    category.id = createProductDto.categoryId;
-    delete createProductDto.categoryId;
+    const categoryIds = createProductDto.categoryIds;
+    delete createProductDto.categoryIds;
     createProductDto.productImage = `${uploadResult.url}:$:${uploadResult.fileId}`;
     const createProductRes = await this.productRepository.save(createProductDto);
-    const categoryProduct = new CategoryProduct();
-    categoryProduct.product = createProductRes;
-    categoryProduct.category = category;
-    await this.productCategoryRepository.save(categoryProduct);
+    categoryIds.split(',').forEach(async (cId) => {
+      const category = new Category();
+      category.id = cId;
+      const categoryProduct = new CategoryProduct();
+      categoryProduct.product = createProductRes;
+      categoryProduct.category = category;
+      await this.productCategoryRepository.save(categoryProduct);
+    })
     return {
-      data: createProductRes,
       message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
     };
   }
 
-  async findAll() {
-    const allProductResult = await this.productRepository.find({
-      where: { isDeleted: false },
-    });
-    return { data: allProductResult, message: CONSTANT_RESPONSE.GET_ALL };
+  async productDetail(productId:string) {
+    const result = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.category', 'category')
+      .where(`product.id = '${productId}'`)
+      .andWhere('category.isDeleted = false')
+      .andWhere('product.isDeleted = false')
+      .getMany();
+    return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND }
   }
 
   async findOne(id: string) {
@@ -70,10 +77,11 @@ export class ProductService {
     }
     if (file.originalName !== undefined) {
       const parts = result.productImage.split(':$:');
-      await this.backblazeService.deleteFile(path.basename(url.parse(parts[0]).pathname),parts[1]);
+      await this.backblazeService.deleteFile(path.basename(url.parse(parts[0]).pathname), parts[1]);
       const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
       updateProductDto.productImage = `${uploadResult.url}:$:${uploadResult.fileId}`;
     }
+    delete updateProductDto.file;
     const { affected } = await this.productRepository.update(
       id,
       updateProductDto,
@@ -88,7 +96,7 @@ export class ProductService {
     };
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     const { affected } = await this.productRepository.update(id, { isDeleted: true });
     if (affected === 1) {
       return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
@@ -98,5 +106,30 @@ export class ProductService {
       message: CONSTANT_RESPONSE.DELETE_FAILED,
       status: false,
     };
+  }
+
+  async categoryProduct(categoryId: string) {
+    const result = await this.categoryRepository
+      .createQueryBuilder('category')
+      .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.product', 'product')
+      .where(`category.id = '${categoryId}'`)
+      .andWhere('category.isDeleted = false')
+      .andWhere('product.isDeleted = false')
+      .select([
+        'categoryProduct.id',
+        'category.id',
+        'category.name',
+        'product.id',
+        'product.name',
+        'product.price',
+        'product.quantity',
+        'product.description',
+        'product.tags',
+        'product.productImage',
+        'product.isDeleted',
+      ])
+      .getMany();
+    return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND }
   }
 }

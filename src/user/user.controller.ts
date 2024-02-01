@@ -1,10 +1,11 @@
 /* eslint-disable prettier/prettier */
 import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, SendOtpDtoEmail, VerifyOtpDto, VerifyOtpDtoEmail } from './dto/user.dto';
+import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, SendOtpDtoEmail, VerifyOtpDto, VerifyOtpDtoEmail, resendEmailDto } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator'
 import { Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 
 @Controller('user')
 @ApiTags('User')
@@ -69,9 +70,17 @@ export class UserController {
     return OTP
   }
 
-
-
-
+  @Post('resend-email')
+  @swaggerDocs({
+    summary: 'Send varification to User',
+    type: resendEmailDto,
+    goodResponse: { status: 201, description: CONSTANT_RESPONSE.RESEND_EMAIL },
+    badresponse: { status: 400, description: 'Bad Request' }
+  })
+  async resendEmail(@Body() sendOtpDto: resendEmailDto) {
+    const OTP = await this.userService.resendEmail(sendOtpDto.email);
+    return OTP
+  }
 
   @Post('verify-otp')
   @swaggerDocs({

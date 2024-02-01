@@ -6,17 +6,22 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { JwtAuthGuard, RoleGuard } from '../utils/guard';
+import { Roles } from '../utils/decorator/role.decorator';
 
 @Controller('category')
 @ApiTags('Categories')
+@ApiBearerAuth('jwt')
+@UseGuards(JwtAuthGuard, RoleGuard)
 export class CategoryController {
-  constructor(private readonly categoryService: CategoryService) {}
+  constructor(private readonly categoryService: CategoryService) { }
 
   @Post()
   @swaggerDocs({
@@ -31,6 +36,7 @@ export class CategoryController {
       description: CONSTANT_RESPONSE.CREATE_REJECTION,
     },
   })
+  @Roles('admin')
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoryService.create(createCategoryDto);
   }
@@ -45,10 +51,10 @@ export class CategoryController {
       description: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
     },
   })
+  @Roles('user')
   findAll() {
     return this.categoryService.findAll();
   }
-
   @Get(':id')
   @swaggerDocs({
     summary: 'get by id',
@@ -76,6 +82,7 @@ export class CategoryController {
       description: CONSTANT_RESPONSE.UPDATE_REJECTION,
     },
   })
+  @Roles('admin')
   update(
     @Param('id') id: string,
     @Body() updateCategoryDto: Partial<CreateCategoryDto>,
@@ -84,6 +91,7 @@ export class CategoryController {
   }
 
   @Delete(':id')
+  @Roles('admin')
   @swaggerDocs({
     summary: 'update category',
     type: null,

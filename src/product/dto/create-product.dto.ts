@@ -6,7 +6,7 @@ export class CreateProductDto {
   @ApiProperty({ example: 'uuid', description: 'id of category', required: true })
   @IsNotEmpty()
   @IsString()
-  categoryId: string;
+  categoryIds: string;
 
   @ApiProperty({ example: 'Product Name', description: 'Name of the product', required: true })
   @IsNotEmpty()

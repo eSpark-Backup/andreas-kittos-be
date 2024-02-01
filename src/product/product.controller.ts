@@ -1,15 +1,19 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, UploadedFile, UseGuards } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Multer } from 'multer';
-import { ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
+import { JwtAuthGuard, RoleGuard } from '../utils/guard';
+import { Roles } from 'src/utils/decorator/role.decorator';
 
 @Controller('product')
 @ApiTags('product')
+@ApiBearerAuth('jwt')
+@UseGuards(JwtAuthGuard,RoleGuard)
 export class ProductController {
   constructor(private readonly productService: ProductService
   ) { }
@@ -21,24 +25,30 @@ export class ProductController {
     goodResponse: { status: 201, description: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY },
     badresponse: { status: 400, description: CONSTANT_RESPONSE.CREATE_REJECTION }
   }) 
+
+  @Roles('admin')
   @Post()
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: Multer.File,@Body() createProductDto: CreateProductDto) {
-    const createProductResult = await this.productService.create({fileBuffer:file.buffer,originalName:file.originalname},createProductDto );
+    const createProductResult = await this.productService.create({fileBuffer:file?.buffer,originalName:file?.originalname},createProductDto );
     file.buffer = null;
     return createProductResult;
   }
 
-  @Get()
-  findAll() {
-    return this.productService.findAll();
+
+  @Roles('user')
+  @Get('product-detail/:productId')
+  productDetail(@Param('productId') productId: string) {
+    return this.productService.productDetail(productId);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.productService.findOne(id);
+  @Roles('user')
+  @Get(':categoryId')
+  findOne(@Param('categoryId') categoryId: string) {
+    return this.productService.categoryProduct(categoryId);
   }
 
+  @Roles('admin')
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
     summary: 'update product',
@@ -49,11 +59,12 @@ export class ProductController {
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
   update(@UploadedFile() file: Multer.File,@Param('id') id: string, @Body() updateProductDto:UpdateProductDto) {
-    return this.productService.update(id, updateProductDto,{fileBuffer:file.buffer,originalName:file.originalname});
+    return this.productService.update(id, updateProductDto,{fileBuffer:file?.buffer,originalName:file?.originalname || undefined});
   }
 
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.productService.remove(+id);
+    return this.productService.remove(id);
   }
 }
