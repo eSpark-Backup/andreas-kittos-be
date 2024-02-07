@@ -22,14 +22,14 @@ export class CategoryService {
 
   async findAll() {
     const allCategoryResult = await this.categoryRepository.find({
-      where: { is_parent: '0', isDeleted: false },
+      where: { isParent: '0', isDeleted: false },
     });
     return { data: allCategoryResult, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
   async findOne(id: string) {
     const allCategoryResult = await this.categoryRepository.findOne({
-      where: { id: id, is_parent: '0', isDeleted: false },
+      where: { id: id, isParent: '0', isDeleted: false },
     });
     const result = allCategoryResult
       ? { data: allCategoryResult, message: CONSTANT_RESPONSE.RECORD_FOUND }

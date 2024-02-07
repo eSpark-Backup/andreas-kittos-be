@@ -8,6 +8,7 @@ import { Product, Category, CategoryProduct } from '../entity';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import * as url from 'url';
 import * as path from 'path';
+import { paginateResponse } from '../utils/function/pagination';
 
 @Injectable()
 export class ProductService {
@@ -25,7 +26,8 @@ export class ProductService {
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
     const categoryIds = createProductDto.categoryIds;
     delete createProductDto.categoryIds;
-    createProductDto.productImage = `${uploadResult.url}:$:${uploadResult.fileId}`;
+    createProductDto.productImage = uploadResult.url;
+    createProductDto.imageKey = uploadResult.fileId;
     const createProductRes = await this.productRepository.save(createProductDto);
     categoryIds.split(',').forEach(async (cId) => {
       const category = new Category();
@@ -40,7 +42,7 @@ export class ProductService {
     };
   }
 
-  async productDetail(productId:string) {
+  async productDetail(productId: string) {
     const result = await this.productRepository
       .createQueryBuilder('product')
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
@@ -68,6 +70,7 @@ export class ProductService {
 
   async update(id: string, updateProductDto: UpdateProductDto, file: any) {
     const result = await this.productRepository.findOne({ where: { id, isDeleted: false } });
+
     if (!result) {
       return {
         data: null,
@@ -75,13 +78,28 @@ export class ProductService {
         status: false,
       };
     }
+    if (updateProductDto.categoryIds) {
+      const category = new Category();
+      category.id = updateProductDto.categoryIds;
+      const product = new Product();
+      product.id = id;
+      const getProductCategory = await this.productCategoryRepository.findOne({ where: { category, product } });
+      if (!getProductCategory) {
+        await this.productCategoryRepository.delete({ product: { id } });
+        const categoryProduct = new CategoryProduct();
+        categoryProduct.product = product;
+        categoryProduct.category = category;
+        await this.productCategoryRepository.save(categoryProduct);
+      }
+    }
     if (file.originalName !== undefined) {
-      const parts = result.productImage.split(':$:');
-      await this.backblazeService.deleteFile(path.basename(url.parse(parts[0]).pathname), parts[1]);
+      await this.backblazeService.deleteFile(path.basename(url.parse(result.productImage).pathname), result.imageKey);
       const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
-      updateProductDto.productImage = `${uploadResult.url}:$:${uploadResult.fileId}`;
+      updateProductDto.productImage = uploadResult.url;
+      updateProductDto.imageKey = uploadResult.fileId
     }
     delete updateProductDto.file;
+    delete updateProductDto.categoryIds;
     const { affected } = await this.productRepository.update(
       id,
       updateProductDto,
@@ -108,28 +126,50 @@ export class ProductService {
     };
   }
 
-  async categoryProduct(categoryId: string) {
-    const result = await this.categoryRepository
+  async categoryProduct(categoryId: string, productName: string, page: number, take: number) {
+
+    const queryToGetData = this.categoryRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.product', 'product')
       .where(`category.id = '${categoryId}'`)
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false')
-      .select([
-        'categoryProduct.id',
-        'category.id',
-        'category.name',
-        'product.id',
-        'product.name',
-        'product.price',
-        'product.quantity',
-        'product.description',
-        'product.tags',
-        'product.productImage',
-        'product.isDeleted',
-      ])
-      .getMany();
-    return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND }
+    const queryToGetCount = this.productCategoryRepository.
+      createQueryBuilder('productCategory')
+      .leftJoinAndSelect('productCategory.category', 'category')
+      .leftJoinAndSelect('productCategory.product', 'product')
+      .where(`productCategory.category ='${categoryId}'`)
+      .andWhere('category.isDeleted = false')
+      .andWhere('product.isDeleted = false')
+
+    if (productName != null) {
+      queryToGetData.andWhere(`product.name = '${productName}'`);
+      queryToGetCount.andWhere(`product.name = '${productName}'`);
+    }
+
+    const skip = (page - 1) * take;
+    const [query, totalCount] = await Promise.all([
+      queryToGetData
+        .select([
+          'categoryProduct.id',
+          'category.id',
+          'category.name',
+          'product.id',
+          'product.name',
+          'product.price',
+          'product.quantity',
+          'product.description',
+          'product.tags',
+          'product.productImage',
+          'product.isDeleted',
+        ])
+        .limit(take)
+        .offset(skip)
+        .getMany(),
+      queryToGetCount
+        .getCount()
+    ]);
+    return { data: paginateResponse({ query, totalCount, take, page }), message: CONSTANT_RESPONSE.RECORD_FOUND }
   }
 }

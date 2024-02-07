@@ -8,16 +8,13 @@ import { hashPassword, verifyPassword } from '../utils/function/password';
 import { sendEmail } from '../utils/function/sendEmail';
 import { JwtService } from '@nestjs/jwt';
 import * as sgMail from '@sendgrid/mail';
-import * as jwt from 'jsonwebtoken';
 import * as otpGenerator from 'otp-generator';
 import * as crypto from 'crypto';
 import * as Twilio from 'twilio';
 import { config } from 'dotenv';
 config();
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
-const TOKEN_KEY = process.env.TOKEN_KEY
 const OTP_KEY = process.env.OTP_KEY
-const TOKEN_EXPIRY = process.env.TOKEN_EXPIRY
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -42,31 +39,31 @@ export class UserService {
       const userFind = await this.usersRepo.findOne({
         where: [
           { email: createUserDto.email },
-          { phone_number: createUserDto.phone_number }
+          { phoneNumber: createUserDto.phone_number }
         ]
       });
       if (userFind) {
-        if((createUserDto.first_name && createUserDto.last_name && createUserDto.phone_number && createUserDto.password)
-        && userFind.phone_number
-        ){
+        if ((createUserDto.first_name && createUserDto.last_name && createUserDto.phone_number && createUserDto.password)
+          && (userFind.phoneNumber && !userFind.password)
+        ) {
           const hashedPassword = hashPassword(createUserDto.password);
           const userToSave = { ...createUserDto, password: hashedPassword };
-          const { affected } = await this.usersRepo.update(userFind.id,userToSave);
+          const { affected } = await this.usersRepo.update(userFind.id, userToSave);
           if (affected === 1) {
-            const token = this.createToken({ id:userFind.id, role:userFind.role })
+            const token = this.createToken({ id: userFind.id, role: userFind.role }, userToSave, false)
             return {
               data: { token },
               message: CONSTANT_RESPONSE.JWT_TOEKN,
             };
-          }else{
+          } else {
             throw new NotFoundException('phone number not found');
           }
         }
         if (!createUserDto.social_id) {
-          throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+          throw new HttpException(CONSTANT_RESPONSE.ALREADY_EXSIST, HttpStatus.CONFLICT);
         }
         if (createUserDto.social_id && createUserDto.profile_image) {
-          const token = this.createToken({ id: userFind.id, role: userFind.role });
+          const token = this.createToken({ id: userFind.id, role: userFind.role }, userFind, true);
           return {
             data: { token },
             message: CONSTANT_RESPONSE.JWT_TOEKN,
@@ -76,7 +73,7 @@ export class UserService {
       else if (createUserDto.social_id && createUserDto.profile_image) {
         const userToSave = { ...createUserDto, is_verified: true };
         const { id, role, ...remain } = await this.usersRepo.save(userToSave);
-        const token = this.createToken({ id, role })
+        const token = this.createToken({ id, role }, remain, true)
         return {
           data: { token },
           message: CONSTANT_RESPONSE.JWT_TOEKN,
@@ -89,7 +86,11 @@ export class UserService {
           const hashedPassword = hashPassword(createUserDto.password);
           const userToSave = { ...createUserDto, password: hashedPassword };
           const { email, role, ...remain } = await this.usersRepo.save(userToSave);
-          const otphash = await this.sendOtpEmail(email);
+          const otphash = await this.generateOtp(email,
+            async (otp: any) => {
+              await sendEmail(email, 'Verify Email OTP', otp);
+            }
+          );
           return {
             data: { otphash },
             message: CONSTANT_RESPONSE.SEND_OTP,
@@ -104,87 +105,122 @@ export class UserService {
   }
 
   async signin(loginDto: LoginDto) {
-    let userFind = null;   
-    if (this.isEmail(loginDto.userCred)) {
-      userFind = await this.usersRepo.findOne({ where: { email: loginDto.userCred } });
-    }else{
-      userFind = await this.usersRepo.findOne({ where: { phone_number: loginDto.userCred } });
-    }
-    if (!userFind) {
-      throw new NotFoundException('Account Not found with That Email');
-    }
-    const verifyPass = verifyPassword(loginDto.password, userFind.password);
-    if (verifyPass) {
-      if (userFind.is_verified === false) {
-        throw new NotFoundException('you are not varified');
-      }
-      const token = this.createToken({ id: userFind.id, role: userFind.role });
-      return {
-        data: { token },
-        message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
-      };
-    }
-    else {
-      throw new NotFoundException('password is incorrect');
-    }
-  }
-
-  createToken(payload: object) {
-    const token = this.jwtService.sign(payload);
-    return token;
-  }
-
-  async sendpasswordResetEmail(to: string) {
-    const token = jwt.sign({ email: to }, TOKEN_KEY, { expiresIn: TOKEN_EXPIRY });
-    const link = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     try {
-      await sendEmail(to, 'Password Reset Link', link);
-      await this.usersRepo.update({ email: to }, { password_reset_token: token });
-      return { message: CONSTANT_RESPONSE.PWD_RESET_SUCCESS };
-
+      let userFind = null;
+      let isEmail = null;
+      if (this.isEmail(loginDto.userCred)) {
+        userFind = await this.usersRepo.findOne({ where: { email: loginDto.userCred } });
+        isEmail = true;
+      } else {
+        userFind = await this.usersRepo.findOne({ where: { phoneNumber: loginDto.userCred } });
+        isEmail = false;
+      }
+      if (!userFind) {
+        throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+      }
+      const verifyPass = verifyPassword(loginDto.password, userFind.password);
+      if (verifyPass) {
+        if (userFind.is_verified === false) {
+          throw new NotFoundException(CONSTANT_RESPONSE.NOT_VARIFIED);
+        }
+        const token = this.createToken({ id: userFind.id, role: userFind.role }, userFind, isEmail);
+        return {
+          data: { token },
+          message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
+        };
+      }
+      else {
+        throw new NotFoundException('password is incorrect');
+      }
     } catch (error) {
-      throw new Error('Failed to send password reset email');
+      return { message: error.message, status: false };
     }
   }
 
-  async resetPasswordwithMail(resetPasswordwithMailDto: ResetPasswordwithMailDto) {
-    try {
-      const { password, token } = resetPasswordwithMailDto;
+  createToken(payload: object, userObj: any, isEmail: boolean) {
+    const token = this.jwtService.sign(payload);
+    let user = {
+      userName: userObj?.first_name + ' ' + userObj?.last_name,
+      profileImage: userObj?.profile_image,
+    }
+    if (isEmail) {
+      user['email'] = userObj.email;
+    } else {
+      user['phoneNumber'] = userObj.phone_number;
+    }
+    return { token, user };
+  }
 
-      const { email, exp } = jwt.verify(token, TOKEN_KEY) as { email: string, exp?: number };
-
-      if (!exp) {
-        return { message: CONSTANT_RESPONSE.INVALID_ACCESS_TOKEN, status: false };
-      }
-
-      const expirationTime = new Date(exp * 1000);
-      const currentTime = new Date();
-
-      if (currentTime >= expirationTime) {
-        return { message: CONSTANT_RESPONSE.TOKEN_EXPIRED, status: false };
-      }
-
-
-
-      const user = await this.usersRepo.findOne({ where: { email } });
-
-      if (!user) {
-        return { status: false, message: CONSTANT_RESPONSE.USER_NOT_FOUND };
-      }
-      if (!user.password_reset_token || user.password_reset_token !== token) {
-        return { status: false, message: CONSTANT_RESPONSE.LINK_EXPIRED_OR_INVALID };
-      }
-
-
-      const hashedPassword = hashPassword(password);
-      await this.usersRepo.update(
-        { email: email },
-        {
-          password: hashedPassword,
-          password_reset_token: null,
+  async sendpasswordResetEmail(emailPhone: string) {
+    let userFind, isEmail = null;
+    if (this.isEmail(emailPhone)) {
+      userFind = await this.usersRepo.findOne({ where: { email: emailPhone, isVerified: true } });
+      isEmail = true;
+    } else {
+      userFind = await this.usersRepo.findOne({ where: { phoneNumber: emailPhone, isVerified: true } })
+      isEmail = false;
+    }
+    if (userFind && isEmail) {
+      const otphash = await this.generateOtp(emailPhone,
+        async (otp: any) => {
+          await sendEmail(emailPhone, 'Verify Email OTP', otp);
         }
       );
-      return { message: CONSTANT_RESPONSE.PASSWORD_RESET };
+      return {
+        data: { otphash },
+        message: CONSTANT_RESPONSE.RESEND_EMAIL,
+      };
+    }
+    else if (userFind && !isEmail) {
+      const sendOtpViaTwilio = async (otp: string) => {
+        await this.twilioClient.messages.create({
+          body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
+          to: `+92${emailPhone}`,
+          from: twilioPhoneNumber,
+        });
+      };
+      const otphash = await this.generateOtp(emailPhone, sendOtpViaTwilio);
+      return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
+    }
+    return {
+      message: `${CONSTANT_RESPONSE.NOT_VARIFIED} or ${CONSTANT_RESPONSE.NOT_EXSIST}`,
+      status: false
+    };
+  }
+
+  async resetPassword(resetPasswordwithMailDto: ResetPasswordwithMailDto) {
+    try {
+      let promiseUpdatePass = null;
+      const { emailPhone, password, otp, hash } = resetPasswordwithMailDto;
+      if (this.isEmail(emailPhone)) {
+        const hashedPassword = hashPassword(password);
+        promiseUpdatePass = this.usersRepo.update(
+          { email: emailPhone },
+          {
+            password: hashedPassword,
+          }
+        );
+      } else {
+        const hashedPassword = hashPassword(password);
+        promiseUpdatePass = this.usersRepo.update(
+          { phoneNumber: emailPhone },
+          {
+            password: hashedPassword,
+          }
+        );
+      }
+      const [hashValue, expires] = hash.split('.');
+      const now = Date.now();
+      if (now > parseInt(expires)) {
+        return { message: CONSTANT_RESPONSE.OTP_EXPIRED, status: false }
+      }
+      const data = `${emailPhone}.${otp}.${expires}`;
+      const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
+      if (newCalculateHash === hashValue) {
+        await promiseUpdatePass;
+        return { message: CONSTANT_RESPONSE.PWD_RESET_SUCCESS };
+      }
+      return { message: CONSTANT_RESPONSE.INVALID_OTP, status: false }
     } catch (error) {
       return { status: false, message: CONSTANT_RESPONSE.FAILED_TO_RESET, data: error.message };
     }
@@ -192,26 +228,50 @@ export class UserService {
 
   async resendEmail(email: any) {
     const userFind = await this.usersRepo.findOne({ where: { email } });
-    if(userFind ){
-      if (!userFind.is_verified) {
-        const otphash = await this.sendOtpEmail(email);
+    if (userFind) {
+      if (!userFind.isVerified) {
+        const otphash = await this.generateOtp(email,
+          async (otp: any) => {
+            await sendEmail(email, 'Verify Email OTP', otp);
+          }
+        );
         return {
           data: { otphash },
           message: CONSTANT_RESPONSE.RESEND_EMAIL,
-        }; 
-      }else{
-        throw new Error('email is already varified');
+        };
+      } else {
+        return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
       }
-    }else{
-      throw new Error('email is not exsist');
+    } else {
+      return { message: CONSTANT_RESPONSE.NOT_EXSIST, status: false };
     }
   }
 
-  async sendOtp(phone: string): Promise<string> {
-    const userFind = await this.usersRepo.findOne({ where: { phone_number: phone, is_verified: true } })
+  async sendOtp(phone: string) {
+    const userFind = await this.usersRepo.findOne({ where: { phoneNumber: phone } });
+    const sendOtpViaTwilio = async (otp: string) => {
+      await this.twilioClient.messages.create({
+        body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
+        to: `+92${phone}`,
+        from: twilioPhoneNumber,
+      });
+    };
+
     if (userFind) {
-      throw new HttpException('Account  already exists with that Email', HttpStatus.CONFLICT);
+      if (!userFind.isVerified) {
+        const otphash = await this.generateOtp(phone, sendOtpViaTwilio);
+        return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
+      } else {
+        return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
+      }
+    } else {
+      const otphash = await this.generateOtp(phone, sendOtpViaTwilio);
+      return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
     }
+  }
+
+
+  async generateOtp(phoneEmail: string, fun: Function) {
     const otp = otpGenerator.generate(4, {
       lowerCaseAlphabets: false,
       upperCaseAlphabets: false,
@@ -220,97 +280,50 @@ export class UserService {
 
     const ttl = 5 * 60 * 1000;
     const expires = Date.now() + ttl;
-    const data = `${phone}.${otp}.${expires}`;
+    const data = `${phoneEmail}.${otp}.${expires}`;
     const hash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
     const fullHash = `${hash}.${expires}`;
     const otpp = `${otp}`;
 
     console.log(`Your OTP is ${otp}`);
     console.log(`Hash value is ${fullHash}`);
-    await this.twilioClient.messages.create({
-      body: otpp + ' is your Laundary App OTP. Do not share it with anyone.',
-      to: '+92' + phone,
-      from: twilioPhoneNumber,
-    });
+    await fun(otpp);
     return fullHash;
   }
 
-
-  async sendOtpEmail(email: string): Promise<string> {
-    const otp = otpGenerator.generate(4, {
-      lowerCaseAlphabets: false,
-      upperCaseAlphabets: false,
-      specialChars: false,
-    });
-
-    const ttl = 5 * 60 * 1000;
-    const expires = Date.now() + ttl;
-    const data = `${email}.${otp}.${expires}`;
-    const hash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
-    const fullHash = `${hash}.${expires}`;
-    const otpp = `${otp}`;
-
-    console.log(`Your OTP is ${otp}`);
-    console.log(`Hash value is ${fullHash}`);
-    await sendEmail(email, 'Verify Email OTP', otpp);
-
-    return fullHash;
-  }
-
-
-  async verifyOtp(phone: string, otp: string, hash: string): Promise<any> {
+  async verifyAccount(emailPhone: string, otp: string, hash: string): Promise<any> {
     try {
+      let userFind: any, user: any, promiseOfCreateAndUpdateUser: any = null;
+      if (this.isEmail(emailPhone)) {
+        userFind = await this.usersRepo.findOne({ where: { email: emailPhone } });
+        if (userFind && userFind.is_verified) {
+          return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
+        }
+        user = new Users();
+        user.is_verified = true;
+        promiseOfCreateAndUpdateUser = this.usersRepo.update(userFind.id, user);
+      } else {
+        userFind = await this.usersRepo.findOne({ where: { phoneNumber: emailPhone, isVerified: true } });
+        if (userFind) {
+          return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
+        }
+        user = new Users();
+        user.phone_number = emailPhone;
+        user.is_verified = true;
+        promiseOfCreateAndUpdateUser = this.usersRepo.save(user);
+      }
       const [hashValue, expires] = hash.split('.');
       const now = Date.now();
       if (now > parseInt(expires)) {
-        throw new Error('OTP Expired');
+        return { message: CONSTANT_RESPONSE.OTP_EXPIRED, status: false }
       }
-      const data = `${phone}.${otp}.${expires}`;
+      const data = `${emailPhone}.${otp}.${expires}`;
       const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
       if (newCalculateHash === hashValue) {
-        const user = new Users();
-        user.phone_number = phone;
-        user.is_verified = true;
-        await this.usersRepo.save(user);
+        await promiseOfCreateAndUpdateUser;
         return { message: CONSTANT_RESPONSE.OTP_VARIFIED };
       }
-      throw new Error('Invalid OTP');
-    } catch (error) {
-      throw new Error(error.message);
-    }
-  }
-
-
-  async verifyOtpEmail(email: string, otp: string, hash: string) {
-    try {
-      const [hashValue, expires] = hash.split('.');
-      const now = Date.now();
-
-      if (now > parseInt(expires)) {
-        throw new Error('OTP Expired');
-      }
-
-      const data = `${email}.${otp}.${expires}`;
-      const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
-
-      if (newCalculateHash === hashValue) {
-        const user = await this.usersRepo.findOne({ where: { email } });
-        if (user) {
-          await this.usersRepo.update(
-            { email: email },
-            {
-              is_verified: true,
-            }
-          );
-          const token = this.createToken({ id: user.id, role: user.role })
-          return { message: CONSTANT_RESPONSE.OTP_VARIFIED, data: { token } };
-        }
-        else {
-          throw new Error('User not found');
-        }
-      }
-
-      throw new Error('Invalid OTP');
+      return { message: CONSTANT_RESPONSE.INVALID_OTP, status: false }
     } catch (error) {
       throw new Error(error.message);
     }

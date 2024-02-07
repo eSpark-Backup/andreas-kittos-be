@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { Body, Controller, Post } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, SendOtpDtoEmail, VerifyOtpDto, VerifyOtpDtoEmail, resendEmailDto } from './dto/user.dto';
+import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, VerifyOtpDto, resendEmailDto } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator'
 import { Put } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
@@ -34,7 +34,7 @@ export class UserController {
     return this.userService.signin(loginDto);
   }
 
-  @Post('password-reset-email-link')
+  @Post('password-reset-opt')
   @swaggerDocs({
     summary: 'Create a new user',
     type: LinkEmailDto,
@@ -42,7 +42,7 @@ export class UserController {
     badresponse: { status: 400, description: 'Bad Request' }
   })
   async resetPasswordEmail(@Body() LinkEmailDto: LinkEmailDto) {
-    const sendPwEmail = await this.userService.sendpasswordResetEmail(LinkEmailDto.to);
+    const sendPwEmail = await this.userService.sendpasswordResetEmail(LinkEmailDto.emailPhone);
     return sendPwEmail
   }
 
@@ -54,7 +54,7 @@ export class UserController {
     badresponse: { status: 400, description: 'Bad Request' }
   })
   async resetPasswordwithMail(@Body() resetPasswordwithMailDto: ResetPasswordwithMailDto) {
-    const updatePassword = await this.userService.resetPasswordwithMail(resetPasswordwithMailDto);
+    const updatePassword = await this.userService.resetPassword(resetPasswordwithMailDto);
     return updatePassword;
   }
 
@@ -66,8 +66,7 @@ export class UserController {
     badresponse: { status: 400, description: 'Bad Request' }
   })
   async sendOtp(@Body() sendOtpDto: SendOtpDto) {
-    const OTP = await this.userService.sendOtp(sendOtpDto.phoneNumber);
-    return OTP
+    return await this.userService.sendOtp(sendOtpDto.phoneNumber);
   }
 
   @Post('resend-email')
@@ -82,35 +81,17 @@ export class UserController {
     return OTP
   }
 
-  @Post('verify-otp')
+  @Post('verify-account')
   @swaggerDocs({
     summary: 'Verify OTP to User',
     type: VerifyOtpDto,
     goodResponse: { status: 201, description: 'OTP Verified Successfully' },
     badresponse: { status: 400, description: 'Bad Request' }
   })
-  async verifyOtp(@Body() verifyOtpDto: VerifyOtpDto) {
+  async verifyAccount(@Body() verifyOtpDto: VerifyOtpDto) {
 
-    const verificationResult = await this.userService.verifyOtp(
-      verifyOtpDto.phoneNumber,
-      verifyOtpDto.otp,
-      verifyOtpDto.hash,
-
-    );
-    return verificationResult;
-  }
-
-  @Post('verify-otp-email')
-  @swaggerDocs({
-    summary: 'Verify OTP to User sent to Email',
-    type: VerifyOtpDtoEmail,
-    goodResponse: { status: 201, description: 'OTP Verified Successfully' },
-    badresponse: { status: 400, description: 'Bad Request' }
-  })
-  async verifyOtpEmail(@Body() verifyOtpDto: VerifyOtpDtoEmail) {
-
-    const verificationResult = await this.userService.verifyOtpEmail(
-      verifyOtpDto.email,
+    const verificationResult = await this.userService.verifyAccount(
+      verifyOtpDto.emailPhone,
       verifyOtpDto.otp,
       verifyOtpDto.hash,
 

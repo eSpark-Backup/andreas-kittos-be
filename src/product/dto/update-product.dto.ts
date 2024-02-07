@@ -3,6 +3,10 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProductDto {
 
+    @ApiProperty({ example: 'uuid', description: 'id of category', required: false })
+    @IsOptional()
+    categoryIds: string;
+
     @ApiProperty({ example: 'Product Name', description: 'Name of the product', required: false })
     name?: string;
 
@@ -31,4 +35,5 @@ export class UpdateProductDto {
     file?: any;
 
     productImage?: string;
+    imageKey?:string;
 }

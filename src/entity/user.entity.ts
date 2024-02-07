@@ -14,13 +14,13 @@ export class Users extends BaseEntity {
   id: string;
 
   @Column({nullable:true})
-  first_name: string;
+  firstName: string;
 
   @Column({nullable:true})
-  last_name: string;
+  lastName: string;
 
   @Column({nullable:true})
-  profile_image: string;
+  profileImage: string;
 
   @Column({ unique: true, length: 100 ,nullable:true})
   email: string;
@@ -29,18 +29,14 @@ export class Users extends BaseEntity {
   password: string;
 
   @Column({ length: 15 ,nullable:true})
-  phone_number: string;
+  phoneNumber: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @Column({default:false})
-  is_verified: boolean;
+  isVerified: boolean;
 
   @Column({nullable:true})
-  social_id: string;
-
-  @Column({ type: 'text', nullable: true })
-  password_reset_token: (() => string) | string;
-
+  socialId: string;
 }

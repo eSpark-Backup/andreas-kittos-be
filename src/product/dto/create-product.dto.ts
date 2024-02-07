@@ -35,8 +35,8 @@ export class CreateProductDto {
   tags?: string;
 
   @ApiProperty({ type: 'string', format: 'binary', description: 'File to upload', required: true })
-  // @IsDefined()
   file: any;
 
   productImage?:string;
+  imageKey?:string;
 }

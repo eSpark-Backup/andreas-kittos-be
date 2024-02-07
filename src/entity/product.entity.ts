@@ -26,6 +26,9 @@ export class Product extends BaseEntity {
   @Column()
   productImage: string;
 
+  @Column()
+  imageKey: string;
+
   @Column({default:false})
   isDeleted:boolean;
 

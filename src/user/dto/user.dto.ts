@@ -54,17 +54,26 @@ export class LoginDto {
 
 export class LinkEmailDto {
   @ApiProperty({ type: String })
-  @IsEmail()
-  to: string;
+  emailPhone: string;
 }
 export class ResetPasswordwithMailDto {
   @ApiProperty({ type: String })
   @IsString()
   password: string;
 
-  @ApiProperty({ type: String })
+  @ApiProperty({ description: 'OTP to be verified' })
+  @IsNotEmpty()
   @IsString()
-  token: string;
+  readonly otp: string;
+
+  @ApiProperty({ description: 'Hash received during OTP generation' })
+  @IsNotEmpty()
+  @IsString()
+  readonly hash: string;
+
+  @ApiProperty({ type: String })
+  @IsNotEmpty()
+  emailPhone: string;
 
 }
 
@@ -84,11 +93,10 @@ export class SendOtpDtoEmail {
 }
 
 export class VerifyOtpDto {
-  @ApiProperty({ description: 'Phone number for which OTP was sent' })
+  @ApiProperty({ description: 'Email or Phone number for which OTP was sent' })
   @IsNotEmpty()
   @IsString()
-  @IsPhoneNumber('PK', { message: 'Invalid phone number' })
-  readonly phoneNumber: string;
+  readonly emailPhone: string;
 
   @ApiProperty({ description: 'OTP to be verified' })
   @IsNotEmpty()

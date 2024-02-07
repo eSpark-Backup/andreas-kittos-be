@@ -15,7 +15,7 @@ export class Category extends BaseEntity {
   status: boolean;
 
   @Column({ default: 0 })
-  is_parent: string;
+  isParent: string;
 
   @Column({default:false})
   isDeleted:boolean;
