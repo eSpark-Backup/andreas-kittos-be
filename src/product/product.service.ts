@@ -166,6 +166,7 @@ export class ProductService {
         ])
         .limit(take)
         .offset(skip)
+        .orderBy("product.createdAt", "DESC")
         .getMany(),
       queryToGetCount
         .getCount()
