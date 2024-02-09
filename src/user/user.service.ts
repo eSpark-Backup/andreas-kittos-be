@@ -39,43 +39,43 @@ export class UserService {
       const userFind = await this.usersRepo.findOne({
         where: [
           { email: createUserDto.email },
-          { phoneNumber: createUserDto.phone_number }
+          { phoneNumber: createUserDto.phoneNumber }
         ]
       });
       if (userFind) {
-        if ((createUserDto.first_name && createUserDto.last_name && createUserDto.phone_number && createUserDto.password)
+        if ((createUserDto.firstName && createUserDto.lastName && createUserDto.phoneNumber && createUserDto.password)
           && (userFind.phoneNumber && !userFind.password)
         ) {
           const hashedPassword = hashPassword(createUserDto.password);
           const userToSave = { ...createUserDto, password: hashedPassword };
           const { affected } = await this.usersRepo.update(userFind.id, userToSave);
           if (affected === 1) {
-            const token = this.createToken({ id: userFind.id, role: userFind.role }, userToSave, false)
+            const userObject = this.createToken({ id: userFind.id, role: userFind.role }, userToSave, false)
             return {
-              data: { token },
+              data: { userObject },
               message: CONSTANT_RESPONSE.JWT_TOEKN,
             };
           } else {
             throw new NotFoundException('phone number not found');
           }
         }
-        if (!createUserDto.social_id) {
+        if (!createUserDto.socialId) {
           throw new HttpException(CONSTANT_RESPONSE.ALREADY_EXSIST, HttpStatus.CONFLICT);
         }
-        if (createUserDto.social_id && createUserDto.profile_image) {
-          const token = this.createToken({ id: userFind.id, role: userFind.role }, userFind, true);
+        if (createUserDto.socialId && createUserDto.profileImage) {
+          const userObject = this.createToken({ id: userFind.id, role: userFind.role }, userFind, true);
           return {
-            data: { token },
+            data: { userObject },
             message: CONSTANT_RESPONSE.JWT_TOEKN,
           };
         }
       }
-      else if (createUserDto.social_id && createUserDto.profile_image) {
-        const userToSave = { ...createUserDto, is_verified: true };
+      else if (createUserDto.socialId && createUserDto.profileImage) {
+        const userToSave = { ...createUserDto, isVerified: true };
         const { id, role, ...remain } = await this.usersRepo.save(userToSave);
-        const token = this.createToken({ id, role }, remain, true)
+        const userObject = this.createToken({ id, role }, remain, true)
         return {
-          data: { token },
+          data: { userObject },
           message: CONSTANT_RESPONSE.JWT_TOEKN,
         };
       }
@@ -120,12 +120,12 @@ export class UserService {
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
-        if (userFind.is_verified === false) {
+        if (userFind.isVerified === false) {
           throw new NotFoundException(CONSTANT_RESPONSE.NOT_VARIFIED);
         }
-        const token = this.createToken({ id: userFind.id, role: userFind.role }, userFind, isEmail);
+        const userObject = this.createToken({ id: userFind.id, role: userFind.role }, userFind, isEmail);
         return {
-          data: { token },
+          data: { userObject },
           message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
         };
       }
@@ -140,8 +140,8 @@ export class UserService {
   createToken(payload: object, userObj: any, isEmail: boolean) {
     const token = this.jwtService.sign(payload);
     let user = {
-      userName: userObj?.first_name + ' ' + userObj?.last_name,
-      profileImage: userObj?.profile_image,
+      userName: userObj?.firstName + ' ' + userObj?.lastName,
+      profileImage: userObj?.profileImage,
     }
     if (isEmail) {
       user['email'] = userObj.email;
@@ -296,11 +296,11 @@ export class UserService {
       let userFind: any, user: any, promiseOfCreateAndUpdateUser: any = null;
       if (this.isEmail(emailPhone)) {
         userFind = await this.usersRepo.findOne({ where: { email: emailPhone } });
-        if (userFind && userFind.is_verified) {
+        if (userFind && userFind.isVerified) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
-        user.is_verified = true;
+        user.isVerified = true;
         promiseOfCreateAndUpdateUser = this.usersRepo.update(userFind.id, user);
       } else {
         userFind = await this.usersRepo.findOne({ where: { phoneNumber: emailPhone, isVerified: true } });
@@ -309,7 +309,7 @@ export class UserService {
         }
         user = new Users();
         user.phone_number = emailPhone;
-        user.is_verified = true;
+        user.isVerified = true;
         promiseOfCreateAndUpdateUser = this.usersRepo.save(user);
       }
       const [hashValue, expires] = hash.split('.');

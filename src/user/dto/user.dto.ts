@@ -11,18 +11,18 @@ export class CreateUserDto {
   @ApiProperty({ type: String })
   @IsString({ message: 'First name must be a string' })
   @IsNotEmpty({ message: 'First name cannot be empty' })
-  readonly first_name: string;
+  readonly firstName: string;
 
   @ApiProperty({ type: String })
   @IsString({ message: 'Last name must be a string' })
   @IsNotEmpty({ message: 'Last name cannot be empty' })
-  readonly last_name: string;
+  readonly lastName: string;
 
   @ApiProperty({ type: String ,default:'user@mail.com'})
   readonly email: string;
 
   @ApiProperty({ type: String})
-  readonly phone_number: string;
+  readonly phoneNumber: string;
 
  
   @ApiProperty({ type: String ,required :false})
@@ -30,13 +30,13 @@ export class CreateUserDto {
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()
-  readonly social_id?: string;
+  readonly socialId?: string;
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()
-  readonly profile_image:string;
+  readonly profileImage:string;
 
-  readonly is_verified?: boolean;
+  readonly isVerified?: boolean;
 
 }
 
