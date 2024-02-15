@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from '../typeorm.config';
@@ -8,9 +9,11 @@ import { APP_FILTER } from '@nestjs/core';
 import { GlobalExceptionFilter } from './utils/global-exception-handler/global-exception.filter';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { SuccessResponseInterceptor } from './utils/interceptor/success-response.interceptor';
+import { FavouriteModule } from './favourite/favourite.module';
+import { StaticModule } from './static/static.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig), UserModule, CategoryModule, ProductModule],
+  imports: [TypeOrmModule.forRoot(typeOrmConfig), UserModule, CategoryModule, ProductModule,FavouriteModule,StaticModule],
   controllers: [],
   providers: [
     {

@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 export const CONSTANT_RESPONSE = {
   UPDATED_SUCCESSFULLY: 'updated Successfully',
   UPDATE_REJECTION: 'id not found',

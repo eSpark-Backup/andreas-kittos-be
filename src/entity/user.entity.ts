@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
-import { Entity, Column, PrimaryGeneratedColumn, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
+import { Favourite } from './favourite.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -39,4 +40,7 @@ export class Users extends BaseEntity {
 
   @Column({nullable:true})
   socialId: string;
+
+  @OneToMany(() => Favourite, favourite => favourite.user_id)
+  favourite: Favourite[];
 }

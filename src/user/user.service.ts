@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, LoginDto, ResetPasswordwithMailDto } from './dto/user.dto';
@@ -28,6 +29,7 @@ export class UserService {
     private jwtService: JwtService,
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
+    
   ) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
@@ -346,4 +348,7 @@ export class UserService {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailPattern.test(input);
   }
+
+
+
 }

@@ -1,7 +1,9 @@
+/* eslint-disable prettier/prettier */
 // sub-category.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { CategoryProduct } from './category_product.entity';
+import { Favourite } from './favourite.entity';
 
 @Entity()
 export class Product extends BaseEntity {
@@ -34,4 +36,7 @@ export class Product extends BaseEntity {
 
   @OneToMany(() => CategoryProduct,categoryProduct => categoryProduct.product )
   categoryProduct: CategoryProduct[];
+
+  @OneToMany(() => Favourite, favourite => favourite.product_id)
+  favourite: Favourite[];
 }

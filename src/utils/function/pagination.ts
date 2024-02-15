@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { IPaginationMeta } from "nestjs-typeorm-paginate";
 
 export function paginateResponse({ query, totalCount, take, page }) {

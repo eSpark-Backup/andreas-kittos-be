@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, MaxLength, IsDefined, IsInt } from 'class-validator';
+/* eslint-disable prettier/prettier */
+import { IsNotEmpty, IsString, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
