@@ -4,15 +4,13 @@ import { IsNotEmpty, IsString } from "class-validator";
 import { Product, Users } from "src/entity";
 
 /* eslint-disable prettier/prettier */
-export class addFavouriteDto {
+export class FavouriteDto {
     @ApiProperty({ example: 'uuid', description: 'id of product', required: true })
     @IsNotEmpty()
     @IsString()
-    product_id: Product;
+    productId: Product;
   
-    @ApiProperty({ example: 'uuid', description: 'id of user', required: true })
-    @IsNotEmpty()
-    @IsString()
-    user_id: Users;
+ 
+    userId: Users;
   }
   

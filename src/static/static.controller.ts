@@ -20,16 +20,11 @@ import { updateStaticDTO } from './dto/update-static.dto';
 export class StaticController {
     constructor(private readonly staticService: StaticService) { }
 
-
-
     @Roles('user')
     @Get(':id')
     async getStaticDataById(@Param('id') id: string) {
         return this.staticService.findOne(id);
     }
-
-
-
 
     @swaggerDocs({
         summary: 'Create static Data',
@@ -56,6 +51,7 @@ export class StaticController {
         return this.staticService.updateStaticData(id, updateStaticDTO);
     }
 
+
     @Delete(':id')
     @Roles('admin')
     @swaggerDocs({
@@ -68,7 +64,7 @@ export class StaticController {
         return this.staticService.deleteStaticData(id);
     }
 
-
+    @Roles('user')
     @Get()
     async getStaticData() {
         return this.staticService.findAll();

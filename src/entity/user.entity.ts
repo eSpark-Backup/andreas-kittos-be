@@ -41,6 +41,6 @@ export class Users extends BaseEntity {
   @Column({nullable:true})
   socialId: string;
 
-  @OneToMany(() => Favourite, favourite => favourite.user_id)
+  @OneToMany(() => Favourite, favourite => favourite.userId)
   favourite: Favourite[];
 }

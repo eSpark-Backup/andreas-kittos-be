@@ -11,10 +11,10 @@ export class Favourite extends BaseEntity {
   id: string;
 
   @ManyToOne(() => Users, user => user.favourite)
-  @JoinColumn({ name: 'user_id' })
-  user_id: Users;
+  @JoinColumn({ name: 'userId' })
+  userId: Users;
 
   @ManyToOne(() => Product, product => product.favourite)
-  @JoinColumn({ name: 'product_id' })
-  product_id: Product;
+  @JoinColumn({ name: 'productId' })
+  productId: Product;
 }

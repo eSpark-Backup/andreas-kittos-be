@@ -37,6 +37,6 @@ export class Product extends BaseEntity {
   @OneToMany(() => CategoryProduct,categoryProduct => categoryProduct.product )
   categoryProduct: CategoryProduct[];
 
-  @OneToMany(() => Favourite, favourite => favourite.product_id)
+  @OneToMany(() => Favourite, favourite => favourite.productId)
   favourite: Favourite[];
 }
