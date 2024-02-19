@@ -35,9 +35,9 @@ export class FavouriteController {
     @Roles('user')
     @Post('remove')
     @swaggerDocs({
-        summary: 'Add product to favourite',
+        summary: 'Remove product from favourite',
         type: FavouriteDto,
-        goodResponse: { status: 201, description: 'Product added to favourite' },
+        goodResponse: { status: 201, description: 'Product Removed from favourite' },
         badresponse: { status: 400, description: 'Bad Request' }
     })
     async removefavourite(@Body() FavouriteDto: FavouriteDto,@UserId() userId: Users) {
