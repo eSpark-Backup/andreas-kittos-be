@@ -22,16 +22,19 @@ export class FavouriteService {
             .andWhere('favourite.productId = :productId', { productId })
             .getOne();
         if (existingFavorite) {
-            return {
-                message: CONSTANT_RESPONSE.ALREADY_EXSIST,
 
+            const result = await this.favouriteRepo.delete(existingFavorite.id);
+            return {
+                data: result,
+                message: CONSTANT_RESPONSE.PRODUCT_REMOVED,
             };
+           
         }
         addFavouriteDto.userId = userId;
         const result = await this.favouriteRepo.save(addFavouriteDto);
         return {
             data: result,
-            message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+            message: CONSTANT_RESPONSE.PRODUCT,
 
         };
     }

@@ -26,5 +26,7 @@ export const CONSTANT_RESPONSE = {
   RESEND_EMAIL: 'Resend successfully',
   HASH: 'Hash sended successfully',
   OTP_EXPIRED: 'Otp expired',
-  INVALID_OTP: 'Invalid Otp'
+  INVALID_OTP: 'Invalid Otp',
+  PRODUCT:'Product added to favourite successfully',
+  PRODUCT_REMOVED:'Product removed from favourite successfully',
 };

@@ -20,11 +20,11 @@ export class FavouriteController {
         private readonly favouriteService: FavouriteService,
     ) { }
     @Roles('user')
-    @Post('add')
+    @Post('add-remove')
     @swaggerDocs({
-        summary: 'Add product to favourite',
+        summary: 'Add/Remove product to favourite',
         type: FavouriteDto,
-        goodResponse: { status: 201, description: 'Product added to favourite' },
+        goodResponse: { status: 201, description: 'Product Added/Removed to favourite' },
         badresponse: { status: 400, description: 'Bad Request' }
     })
     async addfavourite(@Body() FavouriteDto: FavouriteDto,@UserId() userId: Users) {
@@ -32,18 +32,7 @@ export class FavouriteController {
         return favourite;
     }
 
-    @Roles('user')
-    @Post('remove')
-    @swaggerDocs({
-        summary: 'Remove product from favourite',
-        type: FavouriteDto,
-        goodResponse: { status: 201, description: 'Product Removed from favourite' },
-        badresponse: { status: 400, description: 'Bad Request' }
-    })
-    async removefavourite(@Body() FavouriteDto: FavouriteDto,@UserId() userId: Users) {
-        const favourite = await this.favouriteService.removeFromFavourite(FavouriteDto,userId);
-        return favourite;
-    }
+ 
 
     @Roles('user')
     @Get('user')
