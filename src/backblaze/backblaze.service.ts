@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import * as B2 from 'backblaze-b2';
 import { config } from 'dotenv';

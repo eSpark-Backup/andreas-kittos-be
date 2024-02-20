@@ -1,4 +1,5 @@
-import { IsString, IsOptional, MaxLength, IsDefined, IsInt } from 'class-validator';
+/* eslint-disable prettier/prettier */
+import { IsString, IsOptional, MaxLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateProductDto {

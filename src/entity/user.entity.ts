@@ -2,6 +2,7 @@
 import { Entity, Column, PrimaryGeneratedColumn, Index, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Favourite } from './favourite.entity';
+import { Cart } from './cart.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -43,4 +44,7 @@ export class Users extends BaseEntity {
 
   @OneToMany(() => Favourite, favourite => favourite.userId)
   favourite: Favourite[];
+
+  @OneToMany(() => Cart, cart => cart.user)
+  carts: Cart[];
 }

@@ -4,6 +4,7 @@ import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { CategoryProduct } from './category_product.entity';
 import { Favourite } from './favourite.entity';
+import { CartItem } from './cart_item.entity';
 
 @Entity()
 export class Product extends BaseEntity {
@@ -39,4 +40,7 @@ export class Product extends BaseEntity {
 
   @OneToMany(() => Favourite, favourite => favourite.productId)
   favourite: Favourite[];
+
+  @OneToMany(() => CartItem, cartItem => cartItem.product)
+  cartItems: CartItem[];
 }

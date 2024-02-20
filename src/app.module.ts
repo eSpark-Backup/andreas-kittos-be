@@ -11,9 +11,10 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { SuccessResponseInterceptor } from './utils/interceptor/success-response.interceptor';
 import { FavouriteModule } from './favourite/favourite.module';
 import { StaticModule } from './static/static.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig), UserModule, CategoryModule, ProductModule,FavouriteModule,StaticModule],
+  imports: [TypeOrmModule.forRoot(typeOrmConfig), UserModule, CategoryModule, ProductModule,FavouriteModule,StaticModule,CartModule],
   controllers: [],
   providers: [
     {
