@@ -34,7 +34,7 @@ export class UserService {
     private jwtService: JwtService,
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
-    
+
   ) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
@@ -360,10 +360,10 @@ export class UserService {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
 
-   if(userFind.profileImage !== null && userFind.imageKey !== null){
-    await this.backblazeService.deleteFile(path.basename(url.parse(userFind.profileImage).pathname), userFind.imageKey);
+    if (userFind.profileImage !== null && userFind.imageKey !== null) {
+      await this.backblazeService.deleteFile(path.basename(url.parse(userFind.profileImage).pathname), userFind.imageKey);
 
-   }
+    }
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
     updateProfileImage.profileImage = uploadResult.url;
     updateProfileImage.imageKey = uploadResult.fileId;
@@ -371,12 +371,16 @@ export class UserService {
     if (affected === 1) {
       return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
     }
-    return {
-      data: null,
-      message: CONSTANT_RESPONSE.UPDATE_REJECTION,
-      status: false,
-    };
-  
+    else {
+      await this.backblazeService.deleteFile(path.basename(url.parse(updateProfileImage.profileImage).pathname), updateProfileImage.imageKey);
+      return {
+
+        data: null,
+        message: CONSTANT_RESPONSE.UPDATE_REJECTION,
+        status: false,
+      };
+    }
+
   }
 
 
