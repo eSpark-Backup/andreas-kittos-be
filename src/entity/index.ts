@@ -5,3 +5,4 @@ export * from './product.entity';
 export * from './user.entity';
 export * from './favourite.entity';
 export * from './static.entity';
+export * from './cart.entity';

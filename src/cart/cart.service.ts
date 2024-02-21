@@ -8,6 +8,9 @@ import { Users } from "src/entity";
 import { CartItem } from "src/entity/cart_item.entity";
 import { CONSTANT_RESPONSE } from "src/utils/constant/return.constant";
 import { UpdateCartDTO } from "./dto/update-cart.dto";
+import { CartTransformerService } from "./transform-cart-dto.decorator";
+import { simpleCartDto } from "./dto/simpleCartDto";
+import { SimpleUpdateDto } from "./dto/simpleUpdateDto";
 
 @Injectable()
 export class CartService {
@@ -15,12 +18,19 @@ export class CartService {
     constructor(
         @InjectRepository(Cart)
         private readonly cartRepository: Repository<Cart>,
+        private readonly cartTransformerService: CartTransformerService,
+
+
 
         @InjectRepository(CartItem)
         private readonly cartItemRepository: Repository<CartItem>,
     ) { }
 
-    async createCart(userId: Users, cartDto: CartDto) {
+    async createCart(userId: Users, simpleCart: simpleCartDto[]) {
+
+        let simpleCartArray = Array.isArray(simpleCart) ? simpleCart : [simpleCart];
+        const cartDto: CartDto = this.cartTransformerService.transformToCartDto(simpleCartArray);
+
         const existingCart = await this.cartRepository
             .createQueryBuilder('cart')
             .where('cart.userId = :userId', { userId })
@@ -81,7 +91,9 @@ export class CartService {
 
         return { data: cart, message: CONSTANT_RESPONSE.GET_ALL };
     }
-    async updateCart(id: string, updateCartDto: UpdateCartDTO) {
+    async updateCart(id: string, simpleUpdateDto: SimpleUpdateDto | SimpleUpdateDto[]) {
+
+        const updateCartDto: UpdateCartDTO = this.cartTransformerService.transformToUpdateCartDto(simpleUpdateDto);
         const updatedCart = await this.cartRepository
             .createQueryBuilder('cart')
             .where('cart.id = :id', { id: id })

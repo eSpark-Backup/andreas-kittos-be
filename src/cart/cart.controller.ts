@@ -12,7 +12,7 @@ import { UserId } from "src/utils/decorator/userId.decorator";
 import { Users } from "src/entity";
 import { UpdateCartDTO } from "./dto/update-cart.dto";
 import { simpleCartDto } from "./dto/simpleCartDto";
-import { CartTransformerService } from "src/utils/decorator/transform-cart-dto.decorator";
+import { CartTransformerService } from "src/cart/transform-cart-dto.decorator";
 import { SimpleUpdateDto } from "./dto/simpleUpdateDto";
 
 
@@ -24,8 +24,7 @@ import { SimpleUpdateDto } from "./dto/simpleUpdateDto";
 export class CartController {
 
     constructor(private readonly cartService: CartService,
-        private readonly cartTransformerService: CartTransformerService)
-         { }
+    ) { }
 
     @swaggerDocs({
         summary: 'Create a new Cart',
@@ -37,9 +36,8 @@ export class CartController {
     @Roles('user')
     @Post()
     async createCart(@UserId() userId: Users, @Body() simpleCart: simpleCartDto[]) {
-        let simpleCartArray = Array.isArray(simpleCart) ? simpleCart : [simpleCart];
-        const cartDto: CartDto = this.cartTransformerService.transformToCartDto(simpleCartArray);
-        const createCartResult = await this.cartService.createCart(userId, cartDto);
+
+        const createCartResult = await this.cartService.createCart(userId, simpleCart);
         return createCartResult;
 
     }
@@ -66,10 +64,8 @@ export class CartController {
         goodResponse: { status: 201, description: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY },
         badresponse: { status: 400, description: CONSTANT_RESPONSE.UPDATE_REJECTION }
     })
-    async updateCart(@Param('id') id:string,  @Body() simpleUpdateDto: SimpleUpdateDto | SimpleUpdateDto[]) {
-        const updateCartDto: UpdateCartDTO = this.cartTransformerService.transformToUpdateCartDto(simpleUpdateDto);
-
-        const updateCart = await this.cartService.updateCart(id,updateCartDto);
+    async updateCart(@Param('id') id: string, @Body() simpleUpdateDto: SimpleUpdateDto | SimpleUpdateDto[]) {
+        const updateCart = await this.cartService.updateCart(id, simpleUpdateDto);
         return updateCart;
     }
 
