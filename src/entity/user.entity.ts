@@ -24,6 +24,9 @@ export class Users extends BaseEntity {
   @Column({nullable:true})
   profileImage: string;
 
+  @Column({nullable:true})
+  imageKey: string;
+
   @Column({ unique: true, length: 100 ,nullable:true})
   email: string;
 

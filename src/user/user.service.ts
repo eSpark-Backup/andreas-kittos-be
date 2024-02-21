@@ -14,7 +14,11 @@ import * as crypto from 'crypto';
 import * as Twilio from 'twilio';
 import { config } from 'dotenv';
 config();
+import * as url from 'url';
+import * as path from 'path';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
+import { updateProfileImageDto } from './dto/update-profileImage.dto';
+import { BackblazeService } from 'src/backblaze/backblaze.service';
 const OTP_KEY = process.env.OTP_KEY
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -26,6 +30,7 @@ export class UserService {
   private twilioClient: Twilio.Twilio;
 
   constructor(
+    private readonly backblazeService: BackblazeService,
     private jwtService: JwtService,
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
@@ -347,6 +352,31 @@ export class UserService {
   isEmail(input: any) {
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailPattern.test(input);
+  }
+
+  async updateProfileImage(userId: string, file: any, updateProfileImage: updateProfileImageDto) {
+    const userFind = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!userFind) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    }
+
+   if(userFind.profileImage !== null && userFind.imageKey !== null){
+    await this.backblazeService.deleteFile(path.basename(url.parse(userFind.profileImage).pathname), userFind.imageKey);
+
+   }
+    const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
+    updateProfileImage.profileImage = uploadResult.url;
+    updateProfileImage.imageKey = uploadResult.fileId;
+    const { affected } = await this.usersRepo.update(userId, updateProfileImage);
+    if (affected === 1) {
+      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+    }
+    return {
+      data: null,
+      message: CONSTANT_RESPONSE.UPDATE_REJECTION,
+      status: false,
+    };
+  
   }
 
 

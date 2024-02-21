@@ -1,11 +1,18 @@
 /* eslint-disable prettier/prettier */
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, LinkEmailDto, LoginDto, ResetPasswordwithMailDto, SendOtpDto, VerifyOtpDto, resendEmailDto } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator'
 import { Put } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Roles } from 'src/utils/decorator/role.decorator';
+import { Multer } from 'multer';
+import { UserId } from 'src/utils/decorator/userId.decorator';
+import { updateProfileImageDto } from './dto/update-profileImage.dto';
+import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
+
 
 @Controller('user')
 @ApiTags('User')
@@ -99,5 +106,22 @@ export class UserController {
     return verificationResult;
   }
 
- 
+
+  @ApiConsumes('multipart/form-data')
+  @swaggerDocs({
+    summary: 'Update Profile Image',
+    type: updateProfileImageDto,
+    goodResponse: { status: 201, description: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY },
+    badresponse: { status: 400, description: CONSTANT_RESPONSE.UPDATE_REJECTION }
+  })
+  @Roles('user')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Post('update-profile-image')
+  @UseInterceptors(FileInterceptor('file'))
+  async updateProfileImage(@UserId() userId: string, @UploadedFile() file: Multer.File, @Body() updateProfileImage: updateProfileImageDto) {
+    return await this.userService.updateProfileImage(userId, { fileBuffer: file?.buffer, originalName: file?.originalname }, updateProfileImage);
+  }
+
+
 }
