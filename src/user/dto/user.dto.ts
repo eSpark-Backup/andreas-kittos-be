@@ -40,6 +40,28 @@ export class CreateUserDto {
 
 }
 
+export class UpdateUserDto {
+  @ApiProperty({ type: String })
+  @IsString({ message: 'First name must be a string' })
+  @IsOptional()
+  readonly firstName: string;
+
+  @ApiProperty({ type: String })
+  @IsString({ message: 'Last name must be a string' })
+  @IsOptional()
+  readonly lastName: string;
+
+  @ApiProperty({ type: String ,default:'user@mail.com'})
+  @IsEmail({}, { message: 'Invalid email format' })
+  @IsOptional()
+  readonly email: string;
+
+  @ApiProperty({ type: String})
+  @IsOptional ()
+  readonly phoneNumber: string;
+
+}
+
 export class LoginDto {
   @ApiProperty({ type: String })
   @IsString({ message: 'Password must be a string' })
@@ -51,6 +73,7 @@ export class LoginDto {
   @IsNotEmpty({ message: 'Password cannot be empty' })
   readonly password: string; 
 }
+
 
 export class LinkEmailDto {
   @ApiProperty({ type: String })

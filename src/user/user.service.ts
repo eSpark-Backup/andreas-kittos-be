@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateUserDto, LoginDto, ResetPasswordwithMailDto } from './dto/user.dto';
+import { CreateUserDto, LoginDto, ResetPasswordwithMailDto, UpdateUserDto } from './dto/user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Users } from '../entity';
 import { Repository } from 'typeorm';
@@ -383,6 +383,92 @@ export class UserService {
 
   }
 
+  async updateUser(userId: string, updateUserDto: UpdateUserDto) {
 
+    const findUser = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!findUser) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+
+
+    }
+
+    
+if((updateUserDto.email  == null && updateUserDto.phoneNumber != undefined)  || (updateUserDto.email  != undefined && updateUserDto.phoneNumber == undefined)){
+  return { data: null, message: CONSTANT_RESPONSE.UPDATE_FAILED, status: false };
+}
+  if((updateUserDto.email  == null && updateUserDto.phoneNumber == null)  || (updateUserDto.email  == undefined && updateUserDto.phoneNumber == undefined)){
+      const updatedUser = await this.usersRepo.update(userId, updateUserDto);
+      if (updatedUser.affected === 1) {
+        return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+      }
+      else {
+        return { data: null, message: CONSTANT_RESPONSE.UPDATE_REJECTION, status: false };
+      }
+    }
+    else{
+      if (findUser.email !== updateUserDto.email) {
+        const otphash = await this.generateOtp(updateUserDto.email,
+          async (otp: any) => {
+            await sendEmail(updateUserDto.email, 'Verify Email OTP', otp);
+            await this.usersRepo.update(userId, { ...updateUserDto, email :undefined,phoneNumber:undefined });
+          }
+        );
+        return {
+          data: { otphash },
+          message: CONSTANT_RESPONSE.RESEND_EMAIL,
+        };
+  
+      }
+      if (findUser.phoneNumber !== updateUserDto.phoneNumber) {
+
+        await this.usersRepo.update(userId, { ...updateUserDto, email :undefined,phoneNumber:undefined });
+        return  this.sendOtp(updateUserDto.phoneNumber);
+        
+      }
+    }
+  }
+
+  async verifyEmailPhone(userId:string, emailPhone: string, otp: string, hash: string): Promise<any> {
+    try {
+      let  userFind: any, user: any, promiseOfCreateAndUpdateUser: any = null;
+      if (this.isEmail(emailPhone)) {
+        userFind = await this.usersRepo.findOne({ where: { email: emailPhone } });
+        if (userFind && userFind.isVerified) {
+          return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
+        }
+        user = new Users();
+        user.email = emailPhone;
+        user.isVerified = true;
+        promiseOfCreateAndUpdateUser = this.usersRepo.update(userId, user);
+      } else {
+        userFind = await this.usersRepo.findOne({ where: { phoneNumber: emailPhone, isVerified: true } });
+        if (userFind) {
+          return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
+        }
+        user = new Users();
+        user.phone_number = emailPhone;
+        user.isVerified = true;
+        promiseOfCreateAndUpdateUser = this.usersRepo.update(userId,user);
+      }
+      const [hashValue, expires] = hash.split('.');
+      const now = Date.now();
+      if (now > parseInt(expires)) {
+        return { message: CONSTANT_RESPONSE.OTP_EXPIRED, status: false }
+      }
+      const data = `${emailPhone}.${otp}.${expires}`;
+      const newCalculateHash = crypto.createHmac('sha256', OTP_KEY).update(data).digest('hex');
+      if (newCalculateHash === hashValue) {
+        await promiseOfCreateAndUpdateUser;
+        return { message: CONSTANT_RESPONSE.OTP_VARIFIED +' '+ CONSTANT_RESPONSE.PROFILE_UPDATED_SUCCESSFULLY};
+      }
+      return { message: CONSTANT_RESPONSE.INVALID_OTP, status: false }
+    } catch (error) {
+      throw new Error(error.message);
+    }
+  }
 
 }
+
+
+
+

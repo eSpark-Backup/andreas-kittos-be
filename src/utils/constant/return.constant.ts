@@ -1,6 +1,7 @@
 /* eslint-disable prettier/prettier */
 export const CONSTANT_RESPONSE = {
   UPDATED_SUCCESSFULLY: 'updated Successfully',
+  PROFILE_UPDATED_SUCCESSFULLY: 'Profile updated Successfully',
   UPDATE_REJECTION: 'id not found',
   CREATED_SUCCESSFULLY: 'created Successfully',
   CREATE_REJECTION: 'creation failed',
@@ -29,4 +30,5 @@ export const CONSTANT_RESPONSE = {
   INVALID_OTP: 'Invalid Otp',
   PRODUCT:'Product added to favourite successfully',
   PRODUCT_REMOVED:'Product removed from favourite successfully',
+  UPDATE_FAILED: 'Failed to Update',
 };

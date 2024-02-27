@@ -33,7 +33,7 @@ export class Users extends BaseEntity {
   @Column({nullable:true})
   password: string;
 
-  @Column({ length: 15 ,nullable:true})
+  @Column({unique:true, length: 15 ,nullable:true})
   phoneNumber: string;
 
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
