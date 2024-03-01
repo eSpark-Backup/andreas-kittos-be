@@ -43,6 +43,9 @@ export class Address extends BaseEntity {
     latitude?: string;
   };
 
+  // @Column({ default: true })
+  // isDefault: boolean;
+
   @ManyToOne(() => Users, (user) => user.address)
   @JoinColumn({ name: 'userId' })
   user: Users;
