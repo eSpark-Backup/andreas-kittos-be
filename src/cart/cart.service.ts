@@ -1,151 +1,143 @@
-/* eslint-disable prettier/prettier */
-import { Injectable } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { Cart } from "src/entity/cart.entity";
-import { CartDto } from "./dto/cart.dto";
-import { Users } from "src/entity";
-import { CartItem } from "src/entity/cart_item.entity";
-import { CONSTANT_RESPONSE } from "src/utils/constant/return.constant";
-import { UpdateCartDTO } from "./dto/update-cart.dto";
-import { CartTransformerService } from "./transform-cart-dto.decorator";
-import { simpleCartDto } from "./dto/simpleCartDto";
-import { SimpleUpdateDto } from "./dto/simpleUpdateDto";
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Cart } from 'src/entity/cart.entity';
+import { CartDto } from './dto/cart.dto';
+import { Users } from 'src/entity';
+import { CartItem } from 'src/entity/cart_item.entity';
+import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
+import { UpdateCartDTO } from './dto/update-cart.dto';
+import { CartTransformerService } from './transform-cart-dto.decorator';
+import { simpleCartDto } from './dto/simpleCartDto';
+import { SimpleUpdateDto } from './dto/simpleUpdateDto';
 
 @Injectable()
 export class CartService {
+  constructor(
+    @InjectRepository(Cart)
+    private readonly cartRepository: Repository<Cart>,
+    private readonly cartTransformerService: CartTransformerService,
 
-    constructor(
-        @InjectRepository(Cart)
-        private readonly cartRepository: Repository<Cart>,
-        private readonly cartTransformerService: CartTransformerService,
+    @InjectRepository(CartItem)
+    private readonly cartItemRepository: Repository<CartItem>,
+  ) {}
 
+  async createCart(userId: Users, simpleCart: simpleCartDto[]) {
+    const simpleCartArray = Array.isArray(simpleCart)
+      ? simpleCart
+      : [simpleCart];
+    const cartDto: CartDto =
+      this.cartTransformerService.transformToCartDto(simpleCartArray);
 
+    const existingCart = await this.cartRepository
+      .createQueryBuilder('cart')
+      .where('cart.userId = :userId', { userId })
+      .getOne();
 
-        @InjectRepository(CartItem)
-        private readonly cartItemRepository: Repository<CartItem>,
-    ) { }
+    if (existingCart) {
+      const newItem = new CartItem();
 
-    async createCart(userId: Users, simpleCart: simpleCartDto[]) {
+      existingCart.items = cartDto.items.map((itemDto) => {
+        newItem.quantity = itemDto.quantity;
+        newItem.product = itemDto.product;
+        newItem.cart = existingCart.id;
+        return newItem;
+      });
 
-        let simpleCartArray = Array.isArray(simpleCart) ? simpleCart : [simpleCart];
-        const cartDto: CartDto = this.cartTransformerService.transformToCartDto(simpleCartArray);
+      await this.cartItemRepository.save(existingCart.items);
 
-        const existingCart = await this.cartRepository
-            .createQueryBuilder('cart')
-            .where('cart.userId = :userId', { userId })
-            .getOne();
+      const updatedCart = await this.cartRepository
+        .createQueryBuilder('cart')
+        .leftJoinAndSelect('cart.items', 'items')
+        .leftJoinAndSelect('items.product', 'product')
+        .where('cart.id = :id', { id: existingCart.id })
+        .getOne();
 
+      return {
+        data: updatedCart,
+        message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+      };
+    } else {
+      const newCart = new Cart();
+      newCart.user = userId;
 
-        if (existingCart) {
-            const newItem = new CartItem();
+      newCart.items = cartDto.items.map((itemDto) => {
+        const newItem = new CartItem();
+        newItem.quantity = itemDto.quantity;
+        newItem.product = itemDto.product;
+        return newItem;
+      });
 
-            existingCart.items = cartDto.items.map(itemDto => {
+      const createdCart = await this.cartRepository.save(newCart);
+      return {
+        data: createdCart,
+        message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+      };
+    }
+  }
 
-                newItem.quantity = itemDto.quantity;
-                newItem.product = itemDto.product;
-                newItem.cart = existingCart.id.toString();
-                return newItem;
-            });
+  async getCart(userId: string) {
+    const cart = await this.cartRepository
+      .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('cart.userId = :userId', { userId })
+      .getOne();
 
-            await this.cartItemRepository.save(existingCart.items);
+    return { data: cart, message: CONSTANT_RESPONSE.GET_ALL };
+  }
+  async updateCart(
+    id: string,
+    simpleUpdateDto: SimpleUpdateDto | SimpleUpdateDto[],
+  ) {
+    const updateCartDto: UpdateCartDTO =
+      this.cartTransformerService.transformToUpdateCartDto(simpleUpdateDto);
+    const updatedCart = await this.cartRepository
+      .createQueryBuilder('cart')
+      .where('cart.id = :id', { id: id })
+      .getOne();
 
-
-            const updatedCart = await this.cartRepository
-                .createQueryBuilder('cart')
-                .leftJoinAndSelect('cart.items', 'items')
-                .leftJoinAndSelect('items.product', 'product')
-                .where('cart.id = :id', { id: existingCart.id })
-                .getOne();
-
-
-
-
-            return { data: updatedCart, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
-        } else {
-            const newCart = new Cart();
-            newCart.user = userId;
-
-            newCart.items = cartDto.items.map(itemDto => {
-                const newItem = new CartItem();
-                newItem.quantity = itemDto.quantity;
-                newItem.product = itemDto.product;
-                return newItem;
-            });
-
-            const createdCart = await this.cartRepository.save(newCart);
-            return { data: createdCart, message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY };
-        }
+    if (!updatedCart) {
+      return { data: null, message: 'Cart not found' };
     }
 
-
-    async getCart(userId: string) {
-        const cart = await this.cartRepository
-            .createQueryBuilder('cart')
-            .leftJoinAndSelect('cart.items', 'items')
-            .leftJoinAndSelect('items.product', 'product')
-            .where('cart.userId = :userId', { userId })
-            .getOne();
-
-
-
-        return { data: cart, message: CONSTANT_RESPONSE.GET_ALL };
+    for (const itemDto of updateCartDto.items) {
+      await this.cartItemRepository
+        .createQueryBuilder()
+        .update(CartItem)
+        .set({ quantity: itemDto.quantity })
+        .where('cartId = :cartId AND productId = :productId', {
+          cartId: id,
+          productId: itemDto.product,
+        })
+        .execute();
     }
-    async updateCart(id: string, simpleUpdateDto: SimpleUpdateDto | SimpleUpdateDto[]) {
+    const getUpdateCart = await this.cartRepository
+      .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
+      .where('cart.id = :id', { id: id })
+      .getOne();
 
-        const updateCartDto: UpdateCartDTO = this.cartTransformerService.transformToUpdateCartDto(simpleUpdateDto);
-        const updatedCart = await this.cartRepository
-            .createQueryBuilder('cart')
-            .where('cart.id = :id', { id: id })
-            .getOne();
+    return {
+      data: getUpdateCart,
+      message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+    };
+  }
 
-
-
-        if (!updatedCart) {
-            return { data: null, message: 'Cart not found' };
-        }
-
-
-
-        for (const itemDto of updateCartDto.items) {
-            await this.cartItemRepository
-                .createQueryBuilder()
-                .update(CartItem)
-                .set({ quantity: itemDto.quantity })
-                .where('cartId = :cartId AND productId = :productId', {
-                    cartId: id,
-                    productId: itemDto.product,
-                })
-                .execute();
-        }
-        const getUpdateCart = await this.cartRepository
-            .createQueryBuilder('cart')
-            .leftJoinAndSelect('cart.items', 'items')
-            .leftJoinAndSelect('items.product', 'product')
-            .where('cart.id = :id', { id: id })
-            .getOne();
-
-
-        return { data: getUpdateCart, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
-
-
+  async deleteItem(id: string) {
+    const deleteResult = await this.cartItemRepository.delete(id);
+    if (deleteResult.affected === 1) {
+      return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
     }
+    return { data: null, message: CONSTANT_RESPONSE.DELETE_FAILED };
+  }
 
-    async deleteItem(id: string) {
-        const deleteResult = await this.cartItemRepository.delete(id);
-        if (deleteResult.affected === 1) {
-            return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
-        }
-        return { data: null, message: CONSTANT_RESPONSE.DELETE_FAILED };
+  async clearCart(id: string) {
+    const deleteResult = await this.cartItemRepository.delete({ cart: id });
+    if (deleteResult.affected) {
+      return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
     }
-
-    async clearCart(id: string) {
-        const deleteResult = await this.cartItemRepository.delete({ cart: id });
-        if (deleteResult.affected) {
-            return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
-        }
-        return { data: null, message: CONSTANT_RESPONSE.DELETE_FAILED };
-    }
-
+    return { data: null, message: CONSTANT_RESPONSE.DELETE_FAILED };
+  }
 }
-

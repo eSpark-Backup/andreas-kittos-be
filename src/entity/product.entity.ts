@@ -1,5 +1,3 @@
-/* eslint-disable prettier/prettier */
-// sub-category.entity.ts
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { CategoryProduct } from './category_product.entity';
@@ -11,7 +9,7 @@ export class Product extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true})
+  @Column({ unique: true })
   name: string;
 
   @Column()
@@ -32,15 +30,18 @@ export class Product extends BaseEntity {
   @Column()
   imageKey: string;
 
-  @Column({default:false})
-  isDeleted:boolean;
+  @Column({ default: false })
+  isDeleted: boolean;
 
-  @OneToMany(() => CategoryProduct,categoryProduct => categoryProduct.product )
+  @OneToMany(
+    () => CategoryProduct,
+    (categoryProduct) => categoryProduct.product,
+  )
   categoryProduct: CategoryProduct[];
 
-  @OneToMany(() => Favourite, favourite => favourite.productId)
+  @OneToMany(() => Favourite, (favourite) => favourite.productId)
   favourite: Favourite[];
 
-  @OneToMany(() => CartItem, cartItem => cartItem.product)
+  @OneToMany(() => CartItem, (cartItem) => cartItem.product)
   cartItems: CartItem[];
 }

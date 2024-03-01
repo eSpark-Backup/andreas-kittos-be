@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -21,15 +20,19 @@ export class ProductService {
     private productCategoryRepository: Repository<CategoryProduct>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-  ) { }
+  ) {}
 
   async create(file: any, createProductDto: CreateProductDto) {
-    const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
+    const uploadResult = await this.backblazeService.uploadFileFromBuffer(
+      file.fileBuffer,
+      file.originalName,
+    );
     const categoryIds = createProductDto.categoryIds;
     delete createProductDto.categoryIds;
     createProductDto.productImage = uploadResult.url;
     createProductDto.imageKey = uploadResult.fileId;
-    const createProductRes = await this.productRepository.save(createProductDto);
+    const createProductRes =
+      await this.productRepository.save(createProductDto);
     categoryIds.split(',').forEach(async (cId) => {
       const category = new Category();
       category.id = cId;
@@ -37,7 +40,7 @@ export class ProductService {
       categoryProduct.product = createProductRes;
       categoryProduct.category = category;
       await this.productCategoryRepository.save(categoryProduct);
-    })
+    });
     return {
       message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
     };
@@ -52,7 +55,7 @@ export class ProductService {
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false')
       .getMany();
-    return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND }
+    return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND };
   }
 
   async findOne(id: string) {
@@ -62,15 +65,17 @@ export class ProductService {
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-        data: productResult,
-        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-        status: false,
-      };
+          data: productResult,
+          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+          status: false,
+        };
     return result;
   }
 
   async update(id: string, updateProductDto: UpdateProductDto, file: any) {
-    const result = await this.productRepository.findOne({ where: { id, isDeleted: false } });
+    const result = await this.productRepository.findOne({
+      where: { id, isDeleted: false },
+    });
 
     if (!result) {
       return {
@@ -84,7 +89,9 @@ export class ProductService {
       category.id = updateProductDto.categoryIds;
       const product = new Product();
       product.id = id;
-      const getProductCategory = await this.productCategoryRepository.findOne({ where: { category, product } });
+      const getProductCategory = await this.productCategoryRepository.findOne({
+        where: { category, product },
+      });
       if (!getProductCategory) {
         await this.productCategoryRepository.delete({ product: { id } });
         const categoryProduct = new CategoryProduct();
@@ -94,10 +101,16 @@ export class ProductService {
       }
     }
     if (file.originalName !== undefined) {
-      await this.backblazeService.deleteFile(path.basename(url.parse(result.productImage).pathname), result.imageKey);
-      const uploadResult = await this.backblazeService.uploadFileFromBuffer(file.fileBuffer, file.originalName);
+      await this.backblazeService.deleteFile(
+        path.basename(url.parse(result.productImage).pathname),
+        result.imageKey,
+      );
+      const uploadResult = await this.backblazeService.uploadFileFromBuffer(
+        file.fileBuffer,
+        file.originalName,
+      );
       updateProductDto.productImage = uploadResult.url;
-      updateProductDto.imageKey = uploadResult.fileId
+      updateProductDto.imageKey = uploadResult.fileId;
     }
     delete updateProductDto.file;
     delete updateProductDto.categoryIds;
@@ -116,7 +129,9 @@ export class ProductService {
   }
 
   async remove(id: string) {
-    const { affected } = await this.productRepository.update(id, { isDeleted: true });
+    const { affected } = await this.productRepository.update(id, {
+      isDeleted: true,
+    });
     if (affected === 1) {
       return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
     }
@@ -127,22 +142,26 @@ export class ProductService {
     };
   }
 
-  async categoryProduct(categoryId: string, productName: string, page: number, take: number) {
-
+  async categoryProduct(
+    categoryId: string,
+    productName: string,
+    page: number,
+    take: number,
+  ) {
     const queryToGetData = this.categoryRepository
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.product', 'product')
       .where(`category.id = '${categoryId}'`)
       .andWhere('category.isDeleted = false')
-      .andWhere('product.isDeleted = false')
-    const queryToGetCount = this.productCategoryRepository.
-      createQueryBuilder('productCategory')
+      .andWhere('product.isDeleted = false');
+    const queryToGetCount = this.productCategoryRepository
+      .createQueryBuilder('productCategory')
       .leftJoinAndSelect('productCategory.category', 'category')
       .leftJoinAndSelect('productCategory.product', 'product')
       .where(`productCategory.category ='${categoryId}'`)
       .andWhere('category.isDeleted = false')
-      .andWhere('product.isDeleted = false')
+      .andWhere('product.isDeleted = false');
 
     if (productName != null) {
       queryToGetData.andWhere(`product.name = '${productName}'`);
@@ -167,11 +186,13 @@ export class ProductService {
         ])
         .limit(take)
         .offset(skip)
-        .orderBy("product.createdAt", "DESC")
+        .orderBy('product.createdAt', 'DESC')
         .getMany(),
-      queryToGetCount
-        .getCount()
+      queryToGetCount.getCount(),
     ]);
-    return { data: paginateResponse({ query, totalCount, take, page }), message: CONSTANT_RESPONSE.RECORD_FOUND }
+    return {
+      data: paginateResponse({ query, totalCount, take, page }),
+      message: CONSTANT_RESPONSE.RECORD_FOUND,
+    };
   }
 }

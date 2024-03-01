@@ -1,16 +1,16 @@
-/* eslint-disable prettier/prettier */
-import { ApiProperty } from "@nestjs/swagger";
-import { IsNotEmpty, IsString } from "class-validator";
-import { Product, Users } from "src/entity";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsString } from 'class-validator';
+import { Product, Users } from 'src/entity';
 
-/* eslint-disable prettier/prettier */
 export class FavouriteDto {
-    @ApiProperty({ example: 'uuid', description: 'id of product', required: true })
-    @IsNotEmpty()
-    @IsString()
-    productId: Product;
-  
- 
-    userId: Users;
-  }
-  
+  @ApiProperty({
+    example: 'uuid',
+    description: 'id of product',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  productId: Product;
+
+  userId: Users;
+}

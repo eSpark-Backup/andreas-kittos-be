@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,7 +10,7 @@ export class CategoryService {
   constructor(
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
-  ) { }
+  ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
     const createResult = await this.categoryRepository.save(createCategoryDto);
@@ -35,10 +34,10 @@ export class CategoryService {
     const result = allCategoryResult
       ? { data: allCategoryResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-        data: allCategoryResult,
-        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-        status: false,
-      };
+          data: allCategoryResult,
+          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+          status: false,
+        };
     return result;
   }
 
@@ -58,7 +57,9 @@ export class CategoryService {
   }
 
   async remove(id: string) {
-    const { affected } = await this.categoryRepository.update(id, { isDeleted: true });
+    const { affected } = await this.categoryRepository.update(id, {
+      isDeleted: true,
+    });
     if (affected === 1) {
       return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
     }

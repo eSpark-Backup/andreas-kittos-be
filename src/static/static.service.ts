@@ -1,7 +1,3 @@
-/* eslint-disable prettier/prettier */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable prettier/prettier */
-// static.service.ts
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,77 +8,77 @@ import { updateStaticDTO } from './dto/update-static.dto';
 
 @Injectable()
 export class StaticService {
-    constructor(
-        @InjectRepository(Static)
-        private readonly staticRepository: Repository<Static>,
-    ) { }
+  constructor(
+    @InjectRepository(Static)
+    private readonly staticRepository: Repository<Static>,
+  ) {}
 
-    async findOne(id: string) {
-        const staticData = await this.staticRepository.findOne({ where: { id: id } });
-        if (!staticData) {
-            return {
-                data: [],
-                message: CONSTANT_RESPONSE.NOT_EXSIST,
-            };
-        }
-        return {
-            data: staticData,
-            message: CONSTANT_RESPONSE.GET_ALL,
-        };
+  async findOne(id: string) {
+    const staticData = await this.staticRepository.findOne({
+      where: { id: id },
+    });
+    if (!staticData) {
+      return {
+        data: [],
+        message: CONSTANT_RESPONSE.NOT_EXSIST,
+      };
     }
-    async findAll() {
-        try {
-            const staticData = await this.staticRepository.find();
-           
-            return {
-                data: staticData,
-                message: CONSTANT_RESPONSE.GET_ALL,
-            };
-        } catch (error) {
-            return {
-                data: [],
-                message: CONSTANT_RESPONSE.NOT_EXSIST,
-            };
-        }
-    }
-    
-   
+    return {
+      data: staticData,
+      message: CONSTANT_RESPONSE.GET_ALL,
+    };
+  }
+  async findAll() {
+    try {
+      const staticData = await this.staticRepository.find();
 
-    async createStaticData(staticData: StaticDTO) {
-        await this.staticRepository.save(staticData);
-        return {
-            message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
-        };
+      return {
+        data: staticData,
+        message: CONSTANT_RESPONSE.GET_ALL,
+      };
+    } catch (error) {
+      return {
+        data: [],
+        message: CONSTANT_RESPONSE.NOT_EXSIST,
+      };
     }
+  }
 
-    async updateStaticData(id: string, updateStaticDTO: updateStaticDTO) {
-        const staticDataExist = await this.staticRepository.findOne(
-            { where: { id: id } }
-        );
-        if (!staticDataExist) {
-            return {
-                message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-            };
-        }
-        else {
-            await this.staticRepository.update(id, updateStaticDTO);
-            return {
-                message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
-            };
-        }
+  async createStaticData(staticData: StaticDTO) {
+    await this.staticRepository.save(staticData);
+    return {
+      message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+    };
+  }
+
+  async updateStaticData(id: string, updateStaticDTO: updateStaticDTO) {
+    const staticDataExist = await this.staticRepository.findOne({
+      where: { id: id },
+    });
+    if (!staticDataExist) {
+      return {
+        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+      };
+    } else {
+      await this.staticRepository.update(id, updateStaticDTO);
+      return {
+        message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+      };
     }
-    async deleteStaticData(id: string) {
-        const staticDataExist = await this.staticRepository.findOne({ where: { id: id } });
-        if (!staticDataExist) {
-            return {
-                message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-            };
-        }
-        else {
-            await this.staticRepository.delete(id);
-            return {
-                message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY,
-            };
-        }
+  }
+  async deleteStaticData(id: string) {
+    const staticDataExist = await this.staticRepository.findOne({
+      where: { id: id },
+    });
+    if (!staticDataExist) {
+      return {
+        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+      };
+    } else {
+      await this.staticRepository.delete(id);
+      return {
+        message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY,
+      };
     }
+  }
 }

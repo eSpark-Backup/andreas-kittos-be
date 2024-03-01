@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 import { BaseEntity } from './base.entity';
 
@@ -9,7 +8,6 @@ export class Static extends BaseEntity {
 
   @Column({ nullable: true })
   key: string;
-
 
   @Column({ type: 'text', nullable: true })
   value: string;

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { typeOrmConfig } from '../typeorm.config';
@@ -12,9 +11,21 @@ import { SuccessResponseInterceptor } from './utils/interceptor/success-response
 import { FavouriteModule } from './favourite/favourite.module';
 import { StaticModule } from './static/static.module';
 import { CartModule } from './cart/cart.module';
+import { AddressModule } from './address/address.module';
+import { CheckoutModule } from './checkout/checkout.module';
 
 @Module({
-  imports: [TypeOrmModule.forRoot(typeOrmConfig), UserModule, CategoryModule, ProductModule,FavouriteModule,StaticModule,CartModule],
+  imports: [
+    TypeOrmModule.forRoot(typeOrmConfig),
+    UserModule,
+    CategoryModule,
+    ProductModule,
+    FavouriteModule,
+    StaticModule,
+    CartModule,
+    AddressModule,
+    CheckoutModule,
+  ],
   controllers: [],
   providers: [
     {
@@ -27,4 +38,4 @@ import { CartModule } from './cart/cart.module';
     },
   ],
 })
-export class AppModule { }
+export class AppModule {}

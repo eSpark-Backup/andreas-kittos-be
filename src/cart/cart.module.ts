@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Module } from '@nestjs/common';
 import { CartController } from './cart.controller';
 import { CartService } from './cart.service';
@@ -9,8 +8,8 @@ import { CartItem } from 'src/entity/cart_item.entity';
 import { CartTransformerService } from 'src/cart/transform-cart-dto.decorator';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Cart,CartItem])],
-    controllers: [CartController],
-    providers: [CartService,JwtService,CartTransformerService],
+  imports: [TypeOrmModule.forFeature([Cart, CartItem])],
+  controllers: [CartController],
+  providers: [CartService, JwtService, CartTransformerService],
 })
 export class CartModule {}
