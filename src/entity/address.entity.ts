@@ -30,7 +30,7 @@ export class Address extends BaseEntity {
   @Column()
   phoneNumber: string;
 
-  @Column('jsonb')
+  @Column('json')
   address: {
     street: string;
     city: string;

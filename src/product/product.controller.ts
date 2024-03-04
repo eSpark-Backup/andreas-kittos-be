@@ -21,6 +21,7 @@ import { swaggerDocs } from '../utils/decorator/swagger.decorator';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { JwtAuthGuard, RoleGuard } from '../utils/guard';
 import { Roles } from 'src/utils/decorator/role.decorator';
+import { UserId } from 'src/utils/decorator/userId.decorator';
 
 @Controller('product')
 @ApiTags('product')
@@ -70,6 +71,7 @@ export class ProductController {
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'productName', required: false })
   findOne(
+    @UserId() userId: string,
     @Query('categoryId') categoryId: string,
     @Query('page') page?: string,
     @Query('take') take?: string,
@@ -78,6 +80,7 @@ export class ProductController {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
     return this.productService.categoryProduct(
+      userId,
       categoryId,
       productName,
       +page,

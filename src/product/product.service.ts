@@ -4,7 +4,7 @@ import { UpdateProductDto } from './dto/update-product.dto';
 import { BackblazeService } from '../backblaze/backblaze.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Product, Category, CategoryProduct } from '../entity';
+import { Product, Category, CategoryProduct, Favourite } from '../entity';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import * as url from 'url';
 import * as path from 'path';
@@ -20,6 +20,9 @@ export class ProductService {
     private productCategoryRepository: Repository<CategoryProduct>,
     @InjectRepository(Category)
     private categoryRepository: Repository<Category>,
+
+    @InjectRepository(Favourite)
+    private favouriteRepository: Repository<Favourite>,
   ) {}
 
   async create(file: any, createProductDto: CreateProductDto) {
@@ -143,6 +146,7 @@ export class ProductService {
   }
 
   async categoryProduct(
+    userId: string,
     categoryId: string,
     productName: string,
     page: number,
@@ -190,6 +194,23 @@ export class ProductService {
         .getMany(),
       queryToGetCount.getCount(),
     ]);
+
+    const favouriteProductIds = (
+      await this.favouriteRepository
+        .createQueryBuilder('favourite')
+        .select('favourite.productId')
+        .where('favourite.userId = :userId', { userId })
+        .getRawMany()
+    ).map((favourite) => favourite.productId);
+
+    query.forEach((category) => {
+      category.categoryProduct.forEach((categoryProduct) => {
+        categoryProduct.product['_isFavourite'] = favouriteProductIds.includes(
+          categoryProduct.product.id,
+        );
+      });
+    });
+
     return {
       data: paginateResponse({ query, totalCount, take, page }),
       message: CONSTANT_RESPONSE.RECORD_FOUND,

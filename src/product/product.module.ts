@@ -5,7 +5,7 @@ import { MulterModule } from '@nestjs/platform-express';
 import * as multer from 'multer';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Product, Category, CategoryProduct } from '../entity';
+import { Product, Category, CategoryProduct, Favourite } from '../entity';
 import { JwtService } from '@nestjs/jwt';
 
 @Module({
@@ -13,7 +13,7 @@ import { JwtService } from '@nestjs/jwt';
     MulterModule.register({
       storage: multer.memoryStorage(),
     }),
-    TypeOrmModule.forFeature([Product, Category, CategoryProduct]),
+    TypeOrmModule.forFeature([Product, Category, CategoryProduct, Favourite]),
   ],
   controllers: [ProductController],
   providers: [ProductService, BackblazeService, JwtService],
