@@ -7,6 +7,7 @@ import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Product, Category, CategoryProduct, Favourite } from '../entity';
 import { JwtService } from '@nestjs/jwt';
+import { CacheService } from 'src/utils/cache/cache.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { JwtService } from '@nestjs/jwt';
     TypeOrmModule.forFeature([Product, Category, CategoryProduct, Favourite]),
   ],
   controllers: [ProductController],
-  providers: [ProductService, BackblazeService, JwtService],
+  providers: [ProductService, BackblazeService, JwtService, CacheService],
 })
 export class ProductModule {}
