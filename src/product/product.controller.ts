@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -28,7 +29,7 @@ import { UserId } from 'src/utils/decorator/userId.decorator';
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
@@ -70,21 +71,29 @@ export class ProductController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'productName', required: false })
+  @ApiQuery({name:'minPrice',required:false})
+  @ApiQuery({name:'maxPrice',required:false})
   findOne(
     @UserId() userId: string,
     @Query('categoryId') categoryId: string,
     @Query('page') page?: string,
     @Query('take') take?: string,
     @Query('productName') productName?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
   ) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
+    if (!minPrice) minPrice = '0';
+    if (!maxPrice) maxPrice = '5000';
     return this.productService.categoryProduct(
       userId,
       categoryId,
       productName,
+      minPrice,
+      maxPrice,
       +page,
-      +take,
+      +take
     );
   }
 
