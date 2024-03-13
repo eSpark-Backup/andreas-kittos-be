@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 
@@ -8,7 +7,7 @@ export const UserId = createParamDecorator(
     const token = request.headers.authorization.replace('Bearer ', '');
     const jwtService = new JwtService();
     const decodedToken = jwtService.decode(token);
-    const userId = decodedToken.id; 
+    const userId = decodedToken.id;
     return userId;
   },
 );

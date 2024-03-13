@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -11,7 +10,6 @@ import * as url from 'url';
 import * as path from 'path';
 import { paginateResponse } from '../utils/function/pagination';
 import { CacheService } from 'src/utils/cache/cache.service';
-
 
 @Injectable()
 export class ProductService {
@@ -28,7 +26,7 @@ export class ProductService {
     private favouriteRepository: Repository<Favourite>,
 
     private cacheService: CacheService,
-  ) { }
+  ) {}
 
   async create(file: any, createProductDto: CreateProductDto) {
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(
@@ -73,10 +71,10 @@ export class ProductService {
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-        data: productResult,
-        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-        status: false,
-      };
+          data: productResult,
+          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+          status: false,
+        };
     return result;
   }
 
@@ -179,8 +177,12 @@ export class ProductService {
       queryToGetCount.andWhere(`product.name = '${productName}'`);
     }
     if (maxPrice != null && minPrice != null) {
-      queryToGetData.andWhere(`CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`);
-    queryToGetCount.andWhere(`CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`);
+      queryToGetData.andWhere(
+        `CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`,
+      );
+      queryToGetCount.andWhere(
+        `CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`,
+      );
     }
 
     const skip = (page - 1) * take;
@@ -206,33 +208,33 @@ export class ProductService {
       queryToGetCount.getCount(),
     ]);
 
-    const cachedData = await this.cacheService.get<string[]>(`favouriteProductIds_${userId}`);
+    const cachedData = await this.cacheService.get<string[]>(
+      `favouriteProductIds_${userId}`,
+    );
     let favouriteProductIds;
     if (cachedData) {
       favouriteProductIds = cachedData;
+    } else {
+      favouriteProductIds =
+        cachedData ||
+        (
+          await this.favouriteRepository
+            .createQueryBuilder('favourite')
+            .select('favourite.productId')
+            .where('favourite.userId = :userId', { userId })
+            .getRawMany()
+        ).map((favourite) => favourite.productId);
+
+      await this.cacheService.setWithExpiration(
+        `favouriteProductIds_${userId}`,
+        favouriteProductIds,
+        300,
+      );
     }
-    else {
-      favouriteProductIds = cachedData || (
-        await this.favouriteRepository
-          .createQueryBuilder('favourite')
-          .select('favourite.productId')
-          .where('favourite.userId = :userId', { userId })
-          .getRawMany()
-      ).map((favourite) => favourite.productId);
-
-      await this.cacheService.setWithExpiration(`favouriteProductIds_${userId}`, favouriteProductIds, 300);
-
-
-    }
-
-
-
-
-
 
     query.forEach((category) => {
       category.categoryProduct.forEach((categoryProduct) => {
-        categoryProduct.product['_isFavourite'] = favouriteProductIds.includes(
+        categoryProduct.product['isFavourite'] = favouriteProductIds.includes(
           categoryProduct.product.id,
         );
       });

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { Favourite, Users } from 'src/entity';
 import { Repository } from 'typeorm';
@@ -20,7 +19,7 @@ export class FavouriteService {
       .getOne();
     if (existingFavorite) {
       const result = await this.favouriteRepo.delete(existingFavorite.id);
-      
+
       return {
         data: result,
         message: CONSTANT_RESPONSE.PRODUCT_REMOVED,

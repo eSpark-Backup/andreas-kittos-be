@@ -13,6 +13,7 @@ import { StaticModule } from './static/static.module';
 import { CartModule } from './cart/cart.module';
 import { AddressModule } from './address/address.module';
 import { CheckoutModule } from './checkout/checkout.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { CheckoutModule } from './checkout/checkout.module';
     CartModule,
     AddressModule,
     CheckoutModule,
+    OrderModule,
   ],
   controllers: [],
   providers: [

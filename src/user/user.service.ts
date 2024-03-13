@@ -27,10 +27,12 @@ import * as path from 'path';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
+import { emailTemplate } from 'src/utils/Static html/resetPassword';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
+const TTL = process.env.OTP_TTL;
 
 @Injectable()
 export class UserService {
@@ -118,7 +120,8 @@ export class UserService {
           const { email, role, ...remain } =
             await this.usersRepo.save(userToSave);
           const otphash = await this.generateOtp(email, async (otp: any) => {
-            await sendEmail(email, 'Verify Email OTP', otp);
+            const modifiedTemplate = emailTemplate.replace(/\${otp}/g, otp);
+            await sendEmail(email, 'Verify Email OTP', modifiedTemplate);
           });
           return {
             data: { otphash },
@@ -181,7 +184,7 @@ export class UserService {
     if (isEmail) {
       user['email'] = userObj.email;
     } else {
-      user['phoneNumber'] = userObj.phone_number;
+      user['phoneNumber'] = userObj.phoneNumber;
     }
     return { token, user };
   }
@@ -212,7 +215,7 @@ export class UserService {
       const sendOtpViaTwilio = async (otp: string) => {
         await this.twilioClient.messages.create({
           body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
-          to: `+92${emailPhone}`,
+          to: `${emailPhone}`,
           from: twilioPhoneNumber,
         });
       };
@@ -296,7 +299,7 @@ export class UserService {
     const sendOtpViaTwilio = async (otp: string) => {
       await this.twilioClient.messages.create({
         body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
-        to: `+92${phone}`,
+        to: `${phone}`,
         from: twilioPhoneNumber,
       });
     };
@@ -321,7 +324,8 @@ export class UserService {
       specialChars: false,
     });
 
-    const ttl = 5 * 60 * 1000;
+    //bahir s sett
+    const ttl = TTL;
     const expires = Date.now() + ttl;
     const data = `${phoneEmail}.${otp}.${expires}`;
     const hash = crypto
@@ -364,7 +368,7 @@ export class UserService {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
-        user.phone_number = emailPhone;
+        user.phoneNumber = emailPhone;
         user.isVerified = true;
         promiseOfCreateAndUpdateUser = this.usersRepo.save(user);
       }
@@ -538,7 +542,7 @@ export class UserService {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
-        user.phone_number = emailPhone;
+        user.phoneNumber = emailPhone;
         user.isVerified = true;
         promiseOfCreateAndUpdateUser = this.usersRepo.update(userId, user);
       }

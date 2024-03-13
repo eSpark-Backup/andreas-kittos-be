@@ -40,10 +40,35 @@ export class AddressService {
     }
 
     address.user = user;
-    const ADDRESS = this.addressRepository.save(address);
+    const ADDRESS = await this.addressRepository.save(address);
+
+    const allAddresses = await this.addressRepository
+      .createQueryBuilder('address')
+      .select([
+        'address.id AS address_id',
+        'address.type AS address_type',
+        'user.id AS user_id',
+      ])
+      .innerJoin('address.user', 'user')
+      .getRawMany();
+
+    for (const addr of allAddresses) {
+      if (
+        addr.address_type === ADDRESS.type &&
+        addr.address_id !== ADDRESS.id &&
+        addr.user_id === ADDRESS.user.id
+      ) {
+        await this.addressRepository
+          .createQueryBuilder('address')
+          .update(Address)
+          .set({ isDefault: false })
+          .where('id = :id', { id: addr.address_id })
+          .execute();
+      }
+    }
 
     return {
-      data: ADDRESS,
+      data: null,
       message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
     };
   }

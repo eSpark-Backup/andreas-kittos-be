@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CheckoutDto {
   @ApiProperty({ description: 'Total amount of the checkout', example: 100.0 })
@@ -49,7 +49,7 @@ export class CheckoutDto {
     example: 'a125f9b0-d951-48d1-9e02-843e0b1a3789',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Billing address ID cannot be empty' })
+  @IsOptional({ message: 'If Null ,then default will be Selected' })
   billingAddressId: string;
 
   @ApiProperty({
@@ -57,6 +57,6 @@ export class CheckoutDto {
     example: 'a125f9b0-d951-48d1-9e02-843e0b1a3789',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Shipping address ID cannot be empty' })
+  @IsOptional({ message: 'If Null ,then default will be Selected' })
   shippingAddressId: string;
 }

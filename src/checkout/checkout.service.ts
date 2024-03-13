@@ -23,14 +23,15 @@ export class CheckoutService {
       total,
       shippingType,
       cartId,
+      deliveryCharges,
       billingAddressId,
       shippingAddressId,
-      deliveryCharges,
       deliveryDate,
       note,
     } = checkoutDto;
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
+
     if (!user) {
       throw new Error('User not found');
     }
@@ -44,6 +45,29 @@ export class CheckoutService {
 
     if (!checkout) {
       checkout = new Checkout();
+    }
+
+    if (!billingAddressId) {
+      const address = await this.addressRepository
+        .createQueryBuilder('address')
+        .leftJoinAndSelect('address.user', 'user')
+        .where('address.user = :userId', { userId })
+        .andWhere('address.isDefault = true')
+        .andWhere('address.type = :type', { type: 'billing' })
+        .getOne();
+      checkout.billingAddress = address;
+    }
+
+    if (!shippingAddressId) {
+      const address = await this.addressRepository
+        .createQueryBuilder('address')
+        .leftJoinAndSelect('address.user', 'user')
+        .where('address.user = :userId', { userId })
+        .andWhere('address.isDefault = true')
+        .andWhere('address.type = :type', { type: 'shipping' })
+        .getOne();
+
+      checkout.shippingAddress = address;
     }
 
     checkout.total = total;
@@ -62,27 +86,47 @@ export class CheckoutService {
     }
     checkout.cart = cart;
 
-    const billingAddress = await this.addressRepository.findOne({
-      where: { id: billingAddressId },
-    });
-    if (!billingAddress) {
-      throw new Error('Billing address not found');
+    if (billingAddressId) {
+      const billingAddress = await this.addressRepository
+        .createQueryBuilder('address')
+        .where('address.id = :billingAddressId', { billingAddressId })
+        .getOne();
+      if (!billingAddress) {
+        throw new Error('Billing address not found');
+      }
+      checkout.billingAddress = billingAddress;
     }
-    checkout.billingAddress = billingAddress;
 
-    const shippingAddress = await this.addressRepository.findOne({
-      where: { id: shippingAddressId },
-    });
-    if (!shippingAddress) {
-      throw new Error('Shipping address not found');
+    if (shippingAddressId) {
+      const shippingAddress = await this.addressRepository
+        .createQueryBuilder('address')
+        .where('address.id = :shippingAddressId', { shippingAddressId })
+        .getOne();
+
+      if (!shippingAddress) {
+        throw new Error('Shipping address not found');
+      }
+      checkout.shippingAddress = shippingAddress;
     }
-    checkout.shippingAddress = shippingAddress;
 
-    const savedCheckout = await this.checkoutRepository.save(checkout);
-
+    await this.checkoutRepository.save(checkout);
+    const data = await this.findAll(userId);
     return {
-      data: savedCheckout,
+      data,
       message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
     };
+  }
+
+  async findAll(userId: string) {
+    const checkouts = await this.checkoutRepository
+      .createQueryBuilder('checkout')
+      .leftJoinAndSelect('checkout.cart', 'cart')
+      .leftJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('checkout.billingAddress', 'billingAddress')
+      .leftJoinAndSelect('checkout.shippingAddress', 'shippingAddress')
+      .where('checkout.user = :userId', { userId })
+      .getMany();
+
+    return checkouts;
   }
 }

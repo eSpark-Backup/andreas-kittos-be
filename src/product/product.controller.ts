@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -29,7 +28,7 @@ import { UserId } from 'src/utils/decorator/userId.decorator';
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class ProductController {
-  constructor(private readonly productService: ProductService) { }
+  constructor(private readonly productService: ProductService) {}
 
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
@@ -71,8 +70,8 @@ export class ProductController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'productName', required: false })
-  @ApiQuery({name:'minPrice',required:false})
-  @ApiQuery({name:'maxPrice',required:false})
+  @ApiQuery({ name: 'minPrice', required: false })
+  @ApiQuery({ name: 'maxPrice', required: false })
   findOne(
     @UserId() userId: string,
     @Query('categoryId') categoryId: string,
@@ -93,7 +92,7 @@ export class ProductController {
       minPrice,
       maxPrice,
       +page,
-      +take
+      +take,
     );
   }
 

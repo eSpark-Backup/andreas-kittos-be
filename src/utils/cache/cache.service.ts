@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -7,22 +6,26 @@ export class CacheService {
 
   constructor() {}
 
-  async setWithExpiration(key: string, value: any, expiresIn: number): Promise<void> {
+  async setWithExpiration(
+    key: string,
+    value: any,
+    expiresIn: number,
+  ): Promise<void> {
     this.cache[key] = {
       value,
-      expiresAt: Date.now() + expiresIn * 1000, 
+      expiresAt: Date.now() + expiresIn * 1000,
     };
   }
 
   async get<T>(key: string): Promise<T | null> {
     const cachedItem = this.cache[key];
     if (cachedItem && cachedItem.expiresAt > Date.now()) {
-        return cachedItem.value;
+      return cachedItem.value;
     } else {
-        delete this.cache[key];
-        return null;
+      delete this.cache[key];
+      return null;
     }
-}
+  }
 
   async del(key: string): Promise<void> {
     delete this.cache[key];

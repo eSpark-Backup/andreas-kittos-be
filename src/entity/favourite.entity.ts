@@ -13,6 +13,6 @@ export class Favourite extends BaseEntity {
   userId: Users;
 
   @ManyToOne(() => Product, (product) => product.favourite)
-  @JoinColumn({ name: 'productId' }) 
+  @JoinColumn({ name: 'productId' })
   productId: Product;
 }

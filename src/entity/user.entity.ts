@@ -7,6 +7,7 @@ import {
 } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Checkout, Address, Cart, Favourite } from '.';
+import { Order } from './order.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -60,4 +61,7 @@ export class Users extends BaseEntity {
 
   @OneToMany(() => Checkout, (checkout) => checkout.user)
   checkouts: Checkout[];
+
+  @OneToMany(() => Order, (order) => order.user)
+  orders: Order[];
 }

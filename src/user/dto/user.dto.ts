@@ -1,13 +1,13 @@
-/* eslint-disable prettier/prettier */
-// src/user/dto/create-user.dto.ts
-
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsEmail, IsOptional, IsPhoneNumber } from 'class-validator';
-
+import {
+  IsNotEmpty,
+  IsString,
+  IsEmail,
+  IsOptional,
+  IsPhoneNumber,
+} from 'class-validator';
 
 export class CreateUserDto {
-
-  
   @ApiProperty({ type: String })
   @IsString({ message: 'First name must be a string' })
   @IsNotEmpty({ message: 'First name cannot be empty' })
@@ -18,14 +18,13 @@ export class CreateUserDto {
   @IsNotEmpty({ message: 'Last name cannot be empty' })
   readonly lastName: string;
 
-  @ApiProperty({ type: String ,default:'user@mail.com'})
+  @ApiProperty({ type: String, default: 'user@mail.com' })
   readonly email: string;
 
-  @ApiProperty({ type: String})
+  @ApiProperty({ type: String })
   readonly phoneNumber: string;
 
- 
-  @ApiProperty({ type: String ,required :false})
+  @ApiProperty({ type: String, required: false })
   readonly password: string;
 
   @ApiProperty({ type: String, required: false })
@@ -34,10 +33,9 @@ export class CreateUserDto {
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()
-  readonly profileImage:string;
+  readonly profileImage: string;
 
   readonly isVerified?: boolean;
-
 }
 
 export class UpdateUserDto {
@@ -51,15 +49,14 @@ export class UpdateUserDto {
   @IsOptional()
   readonly lastName: string;
 
-  @ApiProperty({ type: String ,default:'user@mail.com'})
+  @ApiProperty({ type: String, default: 'user@mail.com' })
   @IsEmail({}, { message: 'Invalid email format' })
   @IsOptional()
   readonly email: string;
 
-  @ApiProperty({ type: String})
-  @IsOptional ()
+  @ApiProperty({ type: String })
+  @IsOptional()
   readonly phoneNumber: string;
-
 }
 
 export class LoginDto {
@@ -71,9 +68,8 @@ export class LoginDto {
   @ApiProperty({ type: String })
   @IsString({ message: 'Password must be a string' })
   @IsNotEmpty({ message: 'Password cannot be empty' })
-  readonly password: string; 
+  readonly password: string;
 }
-
 
 export class LinkEmailDto {
   @ApiProperty({ type: String })
@@ -97,7 +93,6 @@ export class ResetPasswordwithMailDto {
   @ApiProperty({ type: String })
   @IsNotEmpty()
   emailPhone: string;
-
 }
 
 export class SendOtpDto {
@@ -109,7 +104,11 @@ export class SendOtpDto {
 }
 
 export class SendOtpDtoEmail {
-  @ApiProperty({ type: String ,default:'user@mail.com',description: 'Email to which OTP will be sent'})
+  @ApiProperty({
+    type: String,
+    default: 'user@mail.com',
+    description: 'Email to which OTP will be sent',
+  })
   @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty({ message: 'Email cannot be empty' })
   readonly email: string;
@@ -132,9 +131,12 @@ export class VerifyOtpDto {
   readonly hash: string;
 }
 
-
 export class VerifyOtpDtoEmail {
-  @ApiProperty({ type: String ,default:'user@mail.com',description: 'Email to which OTP will be sent'})
+  @ApiProperty({
+    type: String,
+    default: 'user@mail.com',
+    description: 'Email to which OTP will be sent',
+  })
   @IsEmail({}, { message: 'Invalid email format' })
   @IsNotEmpty({ message: 'Email cannot be empty' })
   readonly email: string;
@@ -151,8 +153,7 @@ export class VerifyOtpDtoEmail {
 }
 
 export class resendEmailDto {
-  @ApiProperty({ type: String ,description:'email required'})
+  @ApiProperty({ type: String, description: 'email required' })
   @IsEmail()
   email: string;
 }
-

@@ -1,14 +1,20 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
+
+enum AddressType {
+  SHIPPING = 'shipping',
+  BILLING = 'billing',
+}
 
 export class AddressDto {
   @ApiProperty({
-    type: String,
+    enum: AddressType,
     description: 'Type of address (e.g., billing, shipping)',
   })
-  @IsString({ message: 'Type must be a string' })
-  @IsNotEmpty({ message: 'Type cannot be empty' })
-  type: string;
+  @IsEnum(AddressType, {
+    message: 'Type must be either "shipping" or "billing"',
+  })
+  type: AddressType;
 
   @ApiProperty({ description: 'First name' })
   @IsNotEmpty({ message: 'First name cannot be empty' })

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { randomBytes, createHash } from 'crypto';
 
 function generateSalt(): string {
@@ -17,7 +16,10 @@ export function hashPassword(password: string): string {
   return `${salt}:${hashedPassword}`;
 }
 
-export function verifyPassword(password: string, hashedPassword: string): boolean {
+export function verifyPassword(
+  password: string,
+  hashedPassword: string,
+): boolean {
   const [salt, storedHash] = hashedPassword.split(':');
   const inputHash = hashWithSalt(password, salt);
   return inputHash === storedHash;

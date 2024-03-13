@@ -1,11 +1,14 @@
-/* eslint-disable prettier/prettier */
-import { ApiProperty } from "@nestjs/swagger";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class updateProfileImageDto {
-    @ApiProperty({ type: 'string', format: 'binary', description: 'File to upload', required: true })
-    file: any;
+  @ApiProperty({
+    type: 'string',
+    format: 'binary',
+    description: 'File to upload',
+    required: true,
+  })
+  file: any;
 
-
-    profileImage?: string;
-    imageKey?: string;
+  profileImage?: string;
+  imageKey?: string;
 }
