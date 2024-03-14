@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   HttpException,
   HttpStatus,
@@ -28,6 +29,7 @@ import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { emailTemplate } from 'src/utils/Static html/resetPassword';
+import { welcomeEmailTemplate} from 'src/utils/Static html/welcomeEmail';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -120,8 +122,9 @@ export class UserService {
           const { email, role, ...remain } =
             await this.usersRepo.save(userToSave);
           const otphash = await this.generateOtp(email, async (otp: any) => {
-            const modifiedTemplate = emailTemplate.replace(/\${otp}/g, otp);
-            await sendEmail(email, 'Verify Email OTP', modifiedTemplate);
+            const modifiedTemplate = welcomeEmailTemplate.replace(/\${otp}/g, otp);
+
+            await sendEmail(email, 'Welcome', modifiedTemplate);
           });
           return {
             data: { otphash },
@@ -205,7 +208,9 @@ export class UserService {
     }
     if (userFind && isEmail) {
       const otphash = await this.generateOtp(emailPhone, async (otp: any) => {
-        await sendEmail(emailPhone, 'Verify Email OTP', otp);
+        const modifiedTemplate = emailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
+
+        await sendEmail(emailPhone, 'Reset Your Password', modifiedTemplate);
       });
       return {
         data: { otphash },
@@ -278,7 +283,8 @@ export class UserService {
     if (userFind) {
       if (!userFind.isVerified) {
         const otphash = await this.generateOtp(email, async (otp: any) => {
-          await sendEmail(email, 'Verify Email OTP', otp);
+          const modifiedTemplate = emailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
+          await sendEmail(email, 'Verify Email OTP', modifiedTemplate);
         });
         return {
           data: { otphash },

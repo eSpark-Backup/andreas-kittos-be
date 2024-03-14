@@ -9,7 +9,7 @@ export const emailTemplate = `
 </head>
 <body style="font-family: Arial, sans-serif; margin: 0; padding: 0;">
     <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-        <h2>Hi, XYZ</h2>
+        <h2>Hi, \${name}</h2>
         <p>We received a request to reset your password. Please enter the following One Time PIN in the mpougadalaundry app to proceed:</p>
         <div style="border: 1px solid #ccc; padding: 10px; text-align: center; font-size: 24px; font-weight: bold;">
             \${otp}
