@@ -1,4 +1,4 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 import { Roles } from 'src/utils/decorator/role.decorator';
@@ -8,17 +8,17 @@ import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { OrderService } from './order.service';
 
 @Controller('order')
-@ApiTags('Order(Development in Process)')
+@ApiTags('Order')
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
   @Roles('user')
-  @Post()
+  @Get()
   @swaggerDocs({
     summary: 'Create New Order',
-    type: {},
+    type: null,
     goodResponse: {
       status: 201,
       description: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
