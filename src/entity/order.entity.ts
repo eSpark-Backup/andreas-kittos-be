@@ -1,36 +1,93 @@
+/* eslint-disable prettier/prettier */
 import {
   Column,
   Entity,
   JoinColumn,
   ManyToOne,
   OneToMany,
-  OneToOne,
-  PrimaryGeneratedColumn,
+  PrimaryColumn,
 } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Users } from './user.entity';
-import { OrderItem } from './orderItem.entity';
 import { OrderDetail } from './orderDetail.entity';
 
 @Entity()
 export class Order extends BaseEntity {
-  @PrimaryGeneratedColumn('uuid')
+  @PrimaryColumn()
   id: string;
 
   @Column({ type: 'varchar', length: 50 })
   orderNumber: string;
 
-  //will be chagned to Table for Status
+  @Column('json')
+  orderStatus: {
+    scheduled: boolean;
+    scheduledDate: string;
+    picked: boolean;
+    pickedDate: string;
+    washing: boolean;
+    washingDate: string;
+    delivered: boolean;
+    deliveredDate: string;
+  };
+
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  total: number;
+
   @Column({ type: 'varchar', length: 50 })
-  orderStatus: string;
+  shippingType: string;
+
+  @Column({ type: 'varchar' })
+  deliveryCharges: string;
+
+  @Column({ type: 'varchar' })
+  note: string;
+
+  @Column({ type: 'varchar' })
+  deliveryDate: string;
+
+  @Column('json')
+  billingAddress: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    apartment?: string;
+    block?: string;
+    longitude?: string;
+    latitude?: string;
+  };
+
+  @Column('json')
+  shippingAddress: {
+    name: string;
+    email: string;
+    phoneNumber: string;
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    zipCode: string;
+    apartment?: string;
+    block?: string;
+    longitude?: string;
+    latitude?: string;
+  };
 
   @ManyToOne(() => Users, (user) => user.orders)
   @JoinColumn({ name: 'userId' })
   user: Users;
 
-  @OneToMany(() => OrderItem, (item) => item.order, { cascade: true })
-  item: OrderItem[];
+  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order, { cascade: true })
+  orderDetail: OrderDetail[];
 
-  @OneToOne(() => OrderDetail, (orderDetail) => orderDetail.order)
-  orderDetail: OrderDetail;
+
+
 }
+
+// addressId,userId,shippingAddress,billingAddress,note,deliveryDate,deliveryCharges,shippingType,status 

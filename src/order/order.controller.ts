@@ -29,6 +29,6 @@ export class OrderController {
     },
   })
   create(@UserId() userId: string) {
-    return true;
+    return this.orderService.createOrder(userId);
   }
 }

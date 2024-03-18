@@ -9,7 +9,6 @@ import {
 import { Users } from './user.entity';
 import { BaseEntity } from './base.entity';
 import { Checkout } from './checkout.entity';
-import { OrderDetail } from './orderDetail.entity';
 
 export enum AddressType {
   BILLING = 'billing',
@@ -61,10 +60,4 @@ export class Address extends BaseEntity {
 
   @OneToMany(() => Checkout, (checkout) => checkout.shippingAddress)
   shippingCheckouts: Checkout[];
-
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.billingAddress)
-  orderDetailBillingAdd: OrderDetail[];
-
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.shippingAddress)
-  orderDetailShippingAdd: OrderDetail[];
 }

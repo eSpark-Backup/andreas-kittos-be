@@ -1,43 +1,27 @@
 import {
-  Column,
   Entity,
-  JoinColumn,
-  ManyToOne,
-  OneToOne,
   PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
-import { Address } from './address.entity';
+import { Product } from './product.entity';
+import { BaseEntity } from './base.entity';
 import { Order } from './order.entity';
 
 @Entity()
-export class OrderDetail {
+export class OrderDetail extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
-  id: string;
+  id: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  total: number;
+  @Column()
+  quantity: number;
 
-  @Column({ type: 'varchar', length: 50 })
-  shippingType: string;
-
-  @Column({ type: 'varchar' })
-  deliveryCharges: string;
-
-  @Column({ type: 'varchar' })
-  note: string;
-
-  @Column({ type: 'varchar' })
-  deliveryDate: string;
-
-  @ManyToOne(() => Address, (address) => address.orderDetailBillingAdd)
-  @JoinColumn({ name: 'billingAddressId' })
-  billingAddress: Address;
-
-  @ManyToOne(() => Address, (address) => address.orderDetailShippingAdd)
-  @JoinColumn({ name: 'shippingAddressId' })
-  shippingAddress: Address;
-
-  @OneToOne(() => Order, (Order) => Order.orderDetail)
+  @ManyToOne(() => Order, (order) => order.orderDetail)
   @JoinColumn({ name: 'orderId' })
-  order: Order;
+  order: string;
+
+  @ManyToOne(() => Product, (product) => product.cartItems)
+  @JoinColumn({ name: 'productId' })
+  product: Product;
 }
