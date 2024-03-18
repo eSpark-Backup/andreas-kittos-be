@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -178,12 +179,13 @@ export class ProductService {
     }
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
-        `CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`,
+          `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
       );
       queryToGetCount.andWhere(
-        `CAST(product.price AS NUMERIC) BETWEEN ${minPrice} AND ${maxPrice}`,
+          `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
       );
-    }
+  }
+  
 
     const skip = (page - 1) * take;
     const [query, totalCount] = await Promise.all([
