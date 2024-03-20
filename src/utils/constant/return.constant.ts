@@ -30,4 +30,5 @@ export const CONSTANT_RESPONSE = {
   PRODUCT: 'Product added to favourite successfully',
   PRODUCT_REMOVED: 'Product removed from favourite successfully',
   UPDATE_FAILED: 'Failed to Update',
+  PAYMENT_SUCCESS: 'Payment status updated successfully',
 };

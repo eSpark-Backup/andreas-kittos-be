@@ -121,4 +121,23 @@ export class OrderController {
     return this.orderService.orderDetail(orderId);
   }
 
+  @Roles('admin')
+  @Put('payment-status/:id')
+  @ApiQuery({ name: 'paymentStatus', })
+  @swaggerDocs({
+    summary: 'Update Payment Status',
+    type: null,
+    goodResponse: {
+      status: 200,
+      description: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+    },
+    badresponse: {
+      status: 400,
+      description: CONSTANT_RESPONSE.UPDATE_REJECTION,
+    },
+  })
+  updatePaymentStatus(@Param('id') orderId: string,@Query ('paymentStatus') paymentStatus:string){
+    return this.orderService.paymentStatus(orderId,paymentStatus);
+  }
+
 }

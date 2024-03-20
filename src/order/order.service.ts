@@ -11,6 +11,7 @@ import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
 import { Payment } from 'src/entity/payment.entity';
 import { paginateResponse } from 'src/utils/function/pagination';
+import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 
 @Injectable()
 export class OrderService {
@@ -266,6 +267,35 @@ if(userId!==undefined){
     return {
       data: order,
       message: 'Order detail',
+    };
+  }
+
+  async paymentStatus(id: string, paymentStatus: string) {
+    const order = await this.orderRepository.findOne({ where: { id } });
+    if (!order) {
+      return{
+        data: null,
+        message:CONSTANT_RESPONSE.NOT_EXSIST
+      
+      }
+    }
+    const payment = await this.paymentRepository.createQueryBuilder('payment')
+      .where('payment.order = :orderId', { orderId: order.id })
+      .getOne();
+    
+    if (!payment) {
+      return{
+        data: null,
+        message:CONSTANT_RESPONSE.NOT_EXSIST
+      
+      }
+    }
+    payment.paymentStatus = paymentStatus
+    await this.paymentRepository.save(payment);
+
+    return {
+      data: payment,
+      message:CONSTANT_RESPONSE.PAYMENT_SUCCESS
     };
   }
 
