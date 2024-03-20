@@ -181,13 +181,12 @@ export class OrderService {
     };
   }
 
-  async userOrderDetail(orderId: string, userId: string, page: number, take: number) {
+  async userOrderDetail( userId: string, page: number, take: number) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
     .leftJoinAndSelect('order.orderDetail', 'orderDetail')
     .leftJoinAndSelect('orderDetail.product', 'product')
     .leftJoinAndSelect('order.payment', 'payment')
     .leftJoinAndSelect('order.user', 'user')
-    .where('order.id = :orderId', { orderId })
     .andWhere('user.id = :userId', { userId });
 
   const queryToGetCount =

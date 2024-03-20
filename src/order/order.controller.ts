@@ -93,10 +93,10 @@ export class OrderController {
   })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
-  userOrderDetail(@Param('orderId') orderId: string,@UserId() userId: string,@Query('page') page?: string,@Query('take') take?: string){
+  userOrderDetail(@UserId() userId: string,@Query('page') page?: string,@Query('take') take?: string){
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.userOrderDetail(orderId,userId, +page, +take);
+    return this.orderService.userOrderDetail(userId, +page, +take);
   }
 
 
