@@ -34,6 +34,7 @@ import { welcomeEmailTemplate} from 'src/utils/Static html/welcomeEmail';
 import { Pagination } from 'nestjs-typeorm-paginate';
 import { paginateResponse } from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
+import { ChangePasswordDto } from './dto/change.password.dto';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -60,6 +61,27 @@ async deleteUser(userId: string) {
     }
     await this.usersRepo.delete(userId);
     return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+  }
+
+  async changePassword(userId:string,changePasswordDto:ChangePasswordDto)
+  {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    }
+    const verifyPass = verifyPassword(changePasswordDto.oldPassword, user.password);
+    if (verifyPass) {
+      if(changePasswordDto.oldPassword === changePasswordDto.newPassword)
+      {
+        throw new NotFoundException('Old password and new password cannot be same');
+      }
+      const hashedPassword = hashPassword(changePasswordDto.newPassword);
+
+      await this.usersRepo.update(userId, { password: hashedPassword });
+      return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+    } else {
+      throw new NotFoundException('Old password is incorrect');
+    }
   }
 
   async changeUserStatus(userId: string, userStatusDto: userStatusDto) {

@@ -33,6 +33,7 @@ import { UserId } from 'src/utils/decorator/userId.decorator';
 import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { userStatusDto } from './dto/change.userStatus.dto';
+import { ChangePasswordDto } from './dto/change.password.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -285,5 +286,22 @@ export class UserController {
   })
   async changeUserStatus(@Param('id') userId :string, @Body() userStatusDto:userStatusDto ) {
     return await this.userService.changeUserStatus(userId, userStatusDto);
+  }
+
+  @Roles('admin')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Put('change-password')
+  @swaggerDocs({
+    summary: 'Change User Password',
+    type: null,
+    goodResponse: {
+      status: 201,
+      description: 'User Password Changed Successfully',
+    },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async changePassword (@UserId() userId:string, @Body() changePasswordDto:ChangePasswordDto ) {
+    return await this.userService.changePassword(userId,changePasswordDto);
   }
 }
