@@ -53,10 +53,12 @@ export class OrderController {
     return this.orderService.updateOrderStatus(orderId, updateOrderStatusDto);
   }
 
-  @Roles('user')
+  @Roles('admin')
   @Get('order-list')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({name:'userId',required:false})
+
   @swaggerDocs({
     summary: 'Get List of Total Orders(Admin Access)',
     type: null,
@@ -70,11 +72,11 @@ export class OrderController {
     },
   })
 
-  orderList(@Query('page') page?: string,@Query('take') take?: string){
+  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string){
     
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take);
+    return this.orderService.orderList(+page, +take,userId);
   }
 
   @Roles('user')

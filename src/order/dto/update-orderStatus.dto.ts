@@ -55,14 +55,5 @@ export class UpdateOrderStatusDto {
 
     orderState?: string;
 
-    @ApiProperty({
-        example: 'pending',
-        description: 'Current State of Payment',
-        required: false,
-    })
-    @IsString()
-    @IsOptional()
-
-    paymentStatus?: string;
-
+   
 }

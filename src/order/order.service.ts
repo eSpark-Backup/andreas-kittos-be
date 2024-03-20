@@ -23,6 +23,8 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
+    @InjectRepository(Payment)
+    private readonly paymentRepository: Repository<Payment>,
   ) { }
 
 
@@ -95,14 +97,17 @@ export class OrderService {
   }
 
   async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto) {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    const { scheduled, picked, washing, delivered,orderState,paymentStatus } = updateOrderStatusDto;
+    const order = await this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.orderDetail', 'orderDetail')
+      .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('order.payment', 'payment')
+      .where('order.id = :orderId', { orderId })
+      .getOne();
+    const { scheduled, picked, washing, delivered,orderState } = updateOrderStatusDto;
     if (!order) {
       throw new Error('Order not found');
     }
-    if(paymentStatus !== undefined){
-      order.payment.paymentStatus = paymentStatus;
-    }
+  
     if(orderState !== undefined){
       order.orderState = orderState;
     }
@@ -131,7 +136,7 @@ export class OrderService {
     };
   }
 
-  async orderList( page: number, take: number) {
+  async orderList( page: number, take: number, userId: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -143,7 +148,10 @@ export class OrderService {
 
         const skip = (page - 1) * take;
 
-
+if(userId!==undefined){
+  queryToGetData.andWhere('userId = :userId', { userId });
+  queryToGetCount.andWhere('userId = :userId', { userId });
+}
     const [query, totalCount] = await Promise.all([
 
      queryToGetData.select([
