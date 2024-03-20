@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Entity,
   Column,
@@ -41,13 +42,16 @@ export class Users extends BaseEntity {
   @Column({ unique: true, length: 15, nullable: true })
   phoneNumber: string;
 
+  @Column({ default: 'active' })
+  userStatus:string;
+
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
   @Column({ default: false })
   isVerified: boolean;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, })
   socialId: string;
 
   @OneToMany(() => Favourite, (favourite) => favourite.userId)

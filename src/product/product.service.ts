@@ -162,16 +162,21 @@ export class ProductService {
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.product', 'product')
-      .where(`category.id = '${categoryId}'`)
+      
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
     const queryToGetCount = this.productCategoryRepository
       .createQueryBuilder('productCategory')
       .leftJoinAndSelect('productCategory.category', 'category')
       .leftJoinAndSelect('productCategory.product', 'product')
-      .where(`productCategory.category ='${categoryId}'`)
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
+
+
+    if (categoryId != null) {
+      queryToGetData.andWhere(`category.id = '${categoryId}'`);
+      queryToGetCount.andWhere(`category.id = '${categoryId}'`);
+    }
 
     if (productName != null) {
       queryToGetData.andWhere(`product.name = '${productName}'`);

@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsOptional } from "class-validator";
+import { IsBoolean, IsOptional, IsString } from "class-validator";
 
 /* eslint-disable prettier/prettier */
 export class UpdateOrderStatusDto {
@@ -43,5 +43,26 @@ export class UpdateOrderStatusDto {
     @IsOptional()
 
     delivered?: boolean;
+
+
+    @ApiProperty({
+        example: 'pending',
+        description: 'Current State of Order',
+        required: false,
+    })
+    @IsString()
+    @IsOptional()
+
+    orderState?: string;
+
+    @ApiProperty({
+        example: 'pending',
+        description: 'Current State of Payment',
+        required: false,
+    })
+    @IsString()
+    @IsOptional()
+
+    paymentStatus?: string;
 
 }

@@ -1,9 +1,12 @@
+/* eslint-disable prettier/prettier */
 import {
   Body,
   Controller,
   Delete,
   Get,
+  Param,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -21,7 +24,7 @@ import {
 } from './dto/user.dto';
 import { swaggerDocs } from '../utils/decorator/swagger.decorator';
 import { Put } from '@nestjs/common';
-import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Roles } from 'src/utils/decorator/role.decorator';
@@ -29,6 +32,7 @@ import { Multer } from 'multer';
 import { UserId } from 'src/utils/decorator/userId.decorator';
 import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
+import { userStatusDto } from './dto/change.userStatus.dto';
 
 @Controller('user')
 @ApiTags('User')
@@ -228,6 +232,9 @@ export class UserController {
   @Roles('admin')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAuthGuard, RoleGuard)
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'userStatus', required: false })
   @Get('user-list')
   @swaggerDocs({
     summary: 'Get User List (Admin Access Only)',
@@ -238,8 +245,11 @@ export class UserController {
     },
     badresponse: { status: 400, description: 'Bad Request' },
   })
-  async userList() {
-    return await this.userService.getUserList();
+  
+  async userList(@Query('page') page?: string, @Query('take') take?: string, @Query('userStatus') userStatus?: string){
+    if (isNaN(+page) || !page || !+page) page = '1';
+    if (isNaN(+take) || !take || !+take) take = '10';
+    return await this.userService.getUserList(+page, +take,userStatus);
   }
 
   @Roles('user')
@@ -257,5 +267,23 @@ export class UserController {
   })
   async deleteUser(@UserId() userId: string) {
     return await this.userService.deleteUser(userId);
+  }
+
+
+  @Roles('admin')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Put('change-user-status/:id')
+  @swaggerDocs({
+    summary: 'Change User Status',
+    type: null,
+    goodResponse: {
+      status: 201,
+      description: 'User Status Changed Successfully',
+    },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async changeUserStatus(@Param('id') userId :string, @Body() userStatusDto:userStatusDto ) {
+    return await this.userService.changeUserStatus(userId, userStatusDto);
   }
 }

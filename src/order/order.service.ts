@@ -96,9 +96,15 @@ export class OrderService {
 
   async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto) {
     const order = await this.orderRepository.findOne({ where: { id: orderId } });
-    const { scheduled, picked, washing, delivered } = updateOrderStatusDto;
+    const { scheduled, picked, washing, delivered,orderState,paymentStatus } = updateOrderStatusDto;
     if (!order) {
       throw new Error('Order not found');
+    }
+    if(paymentStatus !== undefined){
+      order.payment.paymentStatus = paymentStatus;
+    }
+    if(orderState !== undefined){
+      order.orderState = orderState;
     }
     if (scheduled !== undefined) {
       order.orderStatus.scheduled = scheduled;
@@ -181,7 +187,7 @@ export class OrderService {
     };
   }
 
-  async userOrderDetail( userId: string, page: number, take: number) {
+  async userOrderDetail( userId: string, page: number, take: number, orderState: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
     .leftJoinAndSelect('order.orderDetail', 'orderDetail')
     .leftJoinAndSelect('orderDetail.product', 'product')
@@ -189,11 +195,18 @@ export class OrderService {
     .leftJoinAndSelect('order.user', 'user')
     .andWhere('user.id = :userId', { userId });
 
+   
+
   const queryToGetCount =
     this.orderRepository.createQueryBuilder('order')
 
-      const skip = (page - 1) * take;
 
+      if (orderState) {
+        queryToGetData.andWhere('order.orderState = :orderState', { orderState });
+        queryToGetCount.andWhere('order.orderState = :orderState', { orderState });
+        
+      }
+      const skip = (page - 1) * take;
 
   const [query, totalCount] = await Promise.all([
 

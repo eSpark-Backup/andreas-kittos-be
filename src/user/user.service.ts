@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable prettier/prettier */
 import {
   HttpException,
@@ -30,6 +31,9 @@ import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { emailTemplate } from 'src/utils/Static html/resetPassword';
 import { welcomeEmailTemplate} from 'src/utils/Static html/welcomeEmail';
+import { Pagination } from 'nestjs-typeorm-paginate';
+import { paginateResponse } from 'src/utils/function/pagination';
+import { userStatusDto } from './dto/change.userStatus.dto';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -56,6 +60,16 @@ async deleteUser(userId: string) {
     }
     await this.usersRepo.delete(userId);
     return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+  }
+
+  async changeUserStatus(userId: string, userStatusDto: userStatusDto) {
+
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    }
+    await this.usersRepo.update(userId, { userStatus: userStatusDto.userStatus });
+    return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
   }
   async signUp(createUserDto: CreateUserDto) {
     try {
@@ -598,10 +612,46 @@ async deleteUser(userId: string) {
     return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
-  async getUserList() {
-    const users = await this.usersRepo.createQueryBuilder('user')
+  async getUserList(page: number, take: number, userStatus: string) {
+    const queryToGetData =  this.usersRepo.createQueryBuilder('user')
     .where('user.role = :role', { role: 'user' })
-    .getMany();
-    return { data: users, message: CONSTANT_RESPONSE.GET_ALL };
+
+
+    const queryToGetCount =  this.usersRepo.createQueryBuilder('user')
+    .where('user.role = :role', { role: 'user' })
+
+    if (userStatus !== undefined) {
+      queryToGetData.andWhere(`user.userStatus = '${userStatus}'`);
+      queryToGetCount.andWhere(`user.userStatus = '${userStatus}'`);
+    
+      
+  }
+
+    const skip = (page - 1) * take;
+
+    const [query, totalCount] = await Promise.all([
+      queryToGetData.select([
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.email',
+        'user.userStatus',
+        'user.phoneNumber',
+        'user.profileImage',
+      ])
+
+      .limit(take)
+      .offset(skip)
+      .orderBy('user.createdAt', 'DESC')
+      .getMany(),
+      queryToGetCount.getCount(),
+    ]);
+
+   
+    return {
+      data:paginateResponse({ query, totalCount, take, page }),
+      message: CONSTANT_RESPONSE.RECORD_FOUND,
+    }
+    
   }
 }
