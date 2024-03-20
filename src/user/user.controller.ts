@@ -1,6 +1,8 @@
 import {
   Body,
   Controller,
+  Delete,
+  Get,
   Post,
   UploadedFile,
   UseGuards,
@@ -204,5 +206,56 @@ export class UserController {
       verifyOtpDto.hash,
     );
     return verificationResult;
+  }
+
+  @Roles('user')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('user-profile')
+  @swaggerDocs({
+    summary: 'Get User Profile',
+    type: null,
+    goodResponse: {
+      status: 201,
+      description: 'User Profile Fetched Successfully',
+    },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async userProfile(@UserId() userId: string) {
+    return await this.userService.getUserProfile(userId);
+  }
+
+  @Roles('admin')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('user-list')
+  @swaggerDocs({
+    summary: 'Get User List (Admin Access Only)',
+    type: null,
+    goodResponse: {
+      status: 201,
+      description: 'User List Fetched Successfully',
+    },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async userList() {
+    return await this.userService.getUserList();
+  }
+
+  @Roles('user')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Delete('delete-account')
+  @swaggerDocs({
+    summary: 'Delete User Account(For Development Use Only',
+    type: null,
+    goodResponse: {
+      status: 201,
+      description: 'User Account Deleted Successfully',
+    },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async deleteUser(@UserId() userId: string) {
+    return await this.userService.deleteUser(userId);
   }
 }

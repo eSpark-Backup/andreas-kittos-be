@@ -49,7 +49,14 @@ export class UserService {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
   }
-
+async deleteUser(userId: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    }
+    await this.usersRepo.delete(userId);
+    return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+  }
   async signUp(createUserDto: CreateUserDto) {
     try {
       const userFind = await this.usersRepo.findOne({
@@ -481,8 +488,11 @@ export class UserService {
         updateUserDto.phoneNumber == undefined)
     ) {
       const updatedUser = await this.usersRepo.update(userId, updateUserDto);
+
       if (updatedUser.affected === 1) {
-        return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+      const  user= await this.getUserProfile(userId);
+     
+        return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
       } else {
         return {
           data: null,
@@ -575,5 +585,23 @@ export class UserService {
     } catch (error) {
       throw new Error(error.message);
     }
+  }
+
+  async getUserProfile(userId: string) {
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    }
+    if (user) {
+      delete user.password;
+  }
+    return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
+  }
+
+  async getUserList() {
+    const users = await this.usersRepo.createQueryBuilder('user')
+    .where('user.role = :role', { role: 'user' })
+    .getMany();
+    return { data: users, message: CONSTANT_RESPONSE.GET_ALL };
   }
 }

@@ -5,11 +5,13 @@ import {
   JoinColumn,
   ManyToOne,
   OneToMany,
+  OneToOne,
   PrimaryColumn,
 } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { Users } from './user.entity';
 import { OrderDetail } from './orderDetail.entity';
+import { Payment } from './payment.entity';
 
 @Entity()
 export class Order extends BaseEntity {
@@ -46,6 +48,12 @@ export class Order extends BaseEntity {
 
   @Column({ type: 'varchar' })
   deliveryDate: string;
+
+  @Column({ type: 'varchar' ,default: 'pending'})
+  orderState: string;
+
+  @OneToOne(() => Payment, (payment) => payment.order, { cascade: true })
+  payment: Payment;
 
   @Column('json')
   billingAddress: {
