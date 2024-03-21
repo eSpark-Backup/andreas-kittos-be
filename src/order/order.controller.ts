@@ -9,6 +9,7 @@ import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { OrderService } from './order.service';
 import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
+import { PaymentStatus } from 'src/entity/payment.entity';
 
 @Controller('order')
 @ApiTags('Order')
@@ -53,12 +54,15 @@ export class OrderController {
     return this.orderService.updateOrderStatus(orderId, updateOrderStatusDto);
   }
 
+
   @Roles('admin')
   @Get('order-list')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({name:'userId',required:false})
   @ApiQuery({name:'orderState',required:false})
+@ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending','failed','success'] })
+
 
   @swaggerDocs({
     summary: 'Get List of Total Orders(Admin Access)',
@@ -73,11 +77,11 @@ export class OrderController {
     },
   })
 
-  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string,@Query('orderState') orderState?:string){
+  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string,@Query('orderState') orderState?:string,@Query('paymentStatus') paymentStatus?:string){
     
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take,userId,orderState);
+    return this.orderService.orderList(+page, +take,userId,orderState,paymentStatus);
   }
 
   @Roles('user')
@@ -103,8 +107,8 @@ export class OrderController {
     return this.orderService.userOrderDetail(userId, +page, +take,orderState);
   }
 
-
   @Roles('user')
+  @Roles('admin')
   @Get('order-detail/:orderId')
   @swaggerDocs({
     summary: 'Get Order Detail',

@@ -104,12 +104,12 @@ export class OrderService {
       .leftJoinAndSelect('order.payment', 'payment')
       .where('order.id = :orderId', { orderId })
       .getOne();
-    const { scheduled, picked, washing, delivered,orderState } = updateOrderStatusDto;
+    const { scheduled, picked, washing, delivered, orderState } = updateOrderStatusDto;
     if (!order) {
       throw new Error('Order not found');
     }
-  
-    if(orderState !== undefined){
+
+    if (orderState !== undefined) {
       order.orderState = orderState;
     }
     if (scheduled !== undefined) {
@@ -137,30 +137,106 @@ export class OrderService {
     };
   }
 
-  async orderList( page: number, take: number, userId: string,orderState: string) {
+  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string) {
+    const queryToGetData = this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.orderDetail', 'orderDetail')
+      .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('order.user', 'user')
+      .leftJoinAndSelect('order.payment', 'payment')
+
+    const queryToGetCount =
+      this.orderRepository.createQueryBuilder('order')
+
+    const skip = (page - 1) * take;
+
+
+    //Error in QUERY Ahmed bhai s poochna hy k paymentStatus k liye kya karna hy
+//    if (paymentStatus !== undefined) {
+//     // Assuming paymentStatus is a column in the payment table
+//     queryToGetData
+//         .andWhere('payment.paymentType = :paymentType', { paymentType: 'COD' });
+//     queryToGetCount
+//         .andWhere('payment.paymentType = :paymentType', { paymentType: 'COD' });
+// }
+//     console.log(queryToGetData.getSql());
+
+    if (userId !== undefined) {
+      queryToGetData.andWhere('userId = :userId', { userId });
+      queryToGetCount.andWhere('userId = :userId', { userId });
+    }
+    if (orderState !== undefined) {
+      queryToGetData.andWhere('orderState = :orderState', { orderState });
+      queryToGetCount.andWhere('orderState = :orderState', { orderState });
+    }
+
+    const [query, totalCount] = await Promise.all([
+
+      queryToGetData.select([
+        'order.id',
+        'order.orderNumber',
+        'order.orderStatus',
+        'order.total',
+        'order.shippingType',
+        'order.deliveryCharges',
+        'order.note',
+        'order.deliveryDate',
+        'order.orderState',
+        'payment.id',
+        'payment.transactionId',
+        'payment.paymentStatus',
+        'payment.paymentType',
+        'user.id',
+        'user.firstName',
+        'user.lastName',
+        'user.email',
+        'user.phoneNumber',
+        'orderDetail.id',
+        'orderDetail.quantity',
+        'product.id',
+        'product.name',
+        'product.price',
+        'product.productImage',
+      ])
+
+        .limit(take)
+        .offset(skip)
+        .orderBy('order.createdAt', 'DESC')
+        .getMany(),
+      queryToGetCount.getCount(),
+    ]);
+
+
+
+    return {
+      data: paginateResponse({ query, totalCount, take, page }),
+      message: 'Order list',
+    };
+  }
+
+  async userOrderDetail(userId: string, page: number, take: number, orderState: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user')
+      .andWhere('user.id = :userId', { userId });
+
+
 
     const queryToGetCount =
       this.orderRepository.createQueryBuilder('order')
 
-        const skip = (page - 1) * take;
 
-if(userId!==undefined){
-  queryToGetData.andWhere('userId = :userId', { userId });
-  queryToGetCount.andWhere('userId = :userId', { userId });
-}
-if(orderState!==undefined){
-  queryToGetData.andWhere('orderState = :orderState', { orderState });
-  queryToGetCount.andWhere('orderState = :orderState', { orderState });
-}
+    if (orderState) {
+      queryToGetData.andWhere('order.orderState = :orderState', { orderState });
+      queryToGetCount.andWhere('order.orderState = :orderState', { orderState });
+
+    }
+    const skip = (page - 1) * take;
 
     const [query, totalCount] = await Promise.all([
 
-     queryToGetData.select([
+      queryToGetData.select([
         'order.id',
         'order.orderNumber',
         'order.orderStatus',
@@ -185,80 +261,16 @@ if(orderState!==undefined){
         'product.price',
         'product.productImage',
       ])
-      
-      .limit(take)
-      .offset(skip)
-      .orderBy('order.createdAt', 'DESC')
-      .getMany(),
+
+        .limit(take)
+        .offset(skip)
+        .orderBy('order.createdAt', 'DESC')
+        .getMany(),
       queryToGetCount.getCount(),
     ]);
 
-
-
     return {
       data: paginateResponse({ query, totalCount, take, page }),
-      message: 'Order list',
-    };
-  }
-
-  async userOrderDetail( userId: string, page: number, take: number, orderState: string) {
-    const queryToGetData = this.orderRepository.createQueryBuilder('order')
-    .leftJoinAndSelect('order.orderDetail', 'orderDetail')
-    .leftJoinAndSelect('orderDetail.product', 'product')
-    .leftJoinAndSelect('order.payment', 'payment')
-    .leftJoinAndSelect('order.user', 'user')
-    .andWhere('user.id = :userId', { userId });
-
-   
-
-  const queryToGetCount =
-    this.orderRepository.createQueryBuilder('order')
-
-
-      if (orderState) {
-        queryToGetData.andWhere('order.orderState = :orderState', { orderState });
-        queryToGetCount.andWhere('order.orderState = :orderState', { orderState });
-        
-      }
-      const skip = (page - 1) * take;
-
-  const [query, totalCount] = await Promise.all([
-
-   queryToGetData.select([
-      'order.id',
-      'order.orderNumber',
-      'order.orderStatus',
-      'order.total',
-      'order.shippingType',
-      'order.deliveryCharges',
-      'order.note',
-      'order.deliveryDate',
-      'order.orderState',
-      'payment.transactionId',
-      'payment.paymentStatus',
-      'payment.paymentType',
-      'user.id',
-      'user.firstName',
-      'user.lastName',
-      'user.email',
-      'user.phoneNumber',
-      'orderDetail.id',
-      'orderDetail.quantity',
-      'product.id',
-      'product.name',
-      'product.price',
-      'product.productImage',
-    ])
-    
-    .limit(take)
-    .offset(skip)
-    .orderBy('order.createdAt', 'DESC')
-    .getMany(),
-    queryToGetCount.getCount(),
-  ]);
-
-    return {
-      data:paginateResponse({ query, totalCount, take, page }),
       message: 'Order detail',
     };
   }
@@ -278,21 +290,21 @@ if(orderState!==undefined){
   async paymentStatus(id: string, paymentStatus: string) {
     const order = await this.orderRepository.findOne({ where: { id } });
     if (!order) {
-      return{
+      return {
         data: null,
-        message:CONSTANT_RESPONSE.NOT_EXSIST
-      
+        message: CONSTANT_RESPONSE.NOT_EXSIST
+
       }
     }
     const payment = await this.paymentRepository.createQueryBuilder('payment')
       .where('payment.order = :orderId', { orderId: order.id })
       .getOne();
-    
+
     if (!payment) {
-      return{
+      return {
         data: null,
-        message:CONSTANT_RESPONSE.NOT_EXSIST
-      
+        message: CONSTANT_RESPONSE.NOT_EXSIST
+
       }
     }
     payment.paymentStatus = paymentStatus
@@ -300,7 +312,7 @@ if(orderState!==undefined){
 
     return {
       data: payment,
-      message:CONSTANT_RESPONSE.PAYMENT_SUCCESS
+      message: CONSTANT_RESPONSE.PAYMENT_SUCCESS
     };
   }
 
