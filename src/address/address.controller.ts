@@ -8,7 +8,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AddressService } from './address.service';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 import { swaggerDocs } from 'src/utils/decorator/swagger.decorator';
@@ -16,6 +16,7 @@ import { AddressDto } from './dto/add-address.dto';
 import { UserId } from 'src/utils/decorator/userId.decorator';
 import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { Roles } from 'src/utils/decorator/role.decorator';
+import Api from 'twilio/lib/rest/Api';
 
 @Controller('address')
 @ApiTags('Address')
@@ -44,6 +45,7 @@ export class AddressController {
 
   @Roles('user')
   @Get()
+  @ApiQuery({ name: 'addressType', required: false })
   @swaggerDocs({
     summary: 'Get All Address of User',
     type: null,
