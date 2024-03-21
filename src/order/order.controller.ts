@@ -9,14 +9,13 @@ import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { OrderService } from './order.service';
 import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
-import { PaymentStatus } from 'src/entity/payment.entity';
 
 @Controller('order')
 @ApiTags('Order')
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderService: OrderService) { }
 
   @Roles('user')
   @Post('create-order')
@@ -33,7 +32,7 @@ export class OrderController {
     },
   })
   create(@UserId() userId: string, @Body() createOrderDto: CreateOrderDto) {
-    return this.orderService.createOrder(userId,createOrderDto);
+    return this.orderService.createOrder(userId, createOrderDto);
   }
 
   @Roles('admin')
@@ -50,7 +49,7 @@ export class OrderController {
       description: CONSTANT_RESPONSE.UPDATE_REJECTION,
     },
   })
-  updateStatus(@Param('id') orderId: string,@Body() updateOrderStatusDto:UpdateOrderStatusDto) {
+  updateStatus(@Param('id') orderId: string, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
     return this.orderService.updateOrderStatus(orderId, updateOrderStatusDto);
   }
 
@@ -59,9 +58,10 @@ export class OrderController {
   @Get('order-list')
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({name:'userId',required:false})
-  @ApiQuery({name:'orderState',required:false})
-@ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending','failed','success'] })
+  @ApiQuery({ name: 'userId', required: false })
+  @ApiQuery({ name: 'orderState', required: false })
+  @ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending', 'failed', 'success'] })
+  @ApiQuery({ name: 'paymentType',required:false, enum: ['COD', 'CARD'] })
 
 
   @swaggerDocs({
@@ -77,11 +77,11 @@ export class OrderController {
     },
   })
 
-  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string,@Query('orderState') orderState?:string,@Query('paymentStatus') paymentStatus?:string){
-    
+  orderList(@Query('page') page?: string, @Query('take') take?: string, @Query('userId') userId?: string, @Query('orderState') orderState?: string, @Query('paymentStatus') paymentStatus?: string, @Query('paymentType') paymentType?: string) {
+
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take,userId,orderState,paymentStatus);
+    return this.orderService.orderList(+page, +take, userId, orderState, paymentStatus, paymentType);
   }
 
   @Roles('user')
@@ -100,11 +100,11 @@ export class OrderController {
   })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({name:'orderState',required:false})
-  userOrderDetail(@UserId() userId: string,@Query('page') page?: string,@Query('take') take?: string,@Query('orderState') orderState?:string){
+  @ApiQuery({ name: 'orderState', required: false })
+  userOrderDetail(@UserId() userId: string, @Query('page') page?: string, @Query('take') take?: string, @Query('orderState') orderState?: string) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.userOrderDetail(userId, +page, +take,orderState);
+    return this.orderService.userOrderDetail(userId, +page, +take, orderState);
   }
 
   @Roles('user')
@@ -122,13 +122,15 @@ export class OrderController {
       description: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
     },
   })
-  orderDetail(@Param('orderId') orderId: string){
+  orderDetail(@Param('orderId') orderId: string) {
     return this.orderService.orderDetail(orderId);
   }
 
   @Roles('admin')
   @Put('payment-status/:id')
-  @ApiQuery({ name: 'paymentStatus', })
+  @ApiQuery({ name: 'paymentStatus',required:false, enum: ['pending', 'failed', 'success'] })
+  @ApiQuery({ name: 'paymentType',required:false, enum: ['COD', 'CARD'] })
+
   @swaggerDocs({
     summary: 'Update Payment Status',
     type: null,
@@ -141,8 +143,8 @@ export class OrderController {
       description: CONSTANT_RESPONSE.UPDATE_REJECTION,
     },
   })
-  updatePaymentStatus(@Param('id') orderId: string,@Query ('paymentStatus') paymentStatus:string){
-    return this.orderService.paymentStatus(orderId,paymentStatus);
+  updatePaymentStatus(@Param('id') orderId: string, @Query('paymentStatus') paymentStatus?: string, @Query('paymentType') paymentType?: string) {
+    return this.orderService.paymentStatus(orderId, paymentStatus,paymentType);
   }
 
 }

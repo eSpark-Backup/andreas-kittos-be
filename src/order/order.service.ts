@@ -137,7 +137,7 @@ export class OrderService {
     };
   }
 
-  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string) {
+  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string, paymentType: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -146,19 +146,25 @@ export class OrderService {
 
     const queryToGetCount =
       this.orderRepository.createQueryBuilder('order')
+        .leftJoinAndSelect('order.payment', 'payment')
 
     const skip = (page - 1) * take;
 
+    if (paymentType !== undefined) {
+      queryToGetData
+        .andWhere('payment.paymentType = :paymentType', { paymentType });
+      queryToGetCount
+        .andWhere('payment.paymentType = :paymentType', { paymentType });
+    }
 
-    //Error in QUERY Ahmed bhai s poochna hy k paymentStatus k liye kya karna hy
-//    if (paymentStatus !== undefined) {
-//     // Assuming paymentStatus is a column in the payment table
-//     queryToGetData
-//         .andWhere('payment.paymentType = :paymentType', { paymentType: 'COD' });
-//     queryToGetCount
-//         .andWhere('payment.paymentType = :paymentType', { paymentType: 'COD' });
-// }
-//     console.log(queryToGetData.getSql());
+    if (paymentStatus !== undefined) {
+
+      queryToGetData
+        .andWhere('payment.paymentStatus = :paymentStatus', { paymentStatus });
+      queryToGetCount
+        .andWhere('payment.paymentStatus = :paymentStatus', { paymentStatus });
+    }
+    console.log(queryToGetData.getSql());
 
     if (userId !== undefined) {
       queryToGetData.andWhere('userId = :userId', { userId });
@@ -277,7 +283,13 @@ export class OrderService {
 
 
   async orderDetail(orderId: string) {
-    const order = await this.orderRepository.findOne({ where: { id: orderId } });
+    const order = await this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.orderDetail', 'orderDetail')
+      .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('order.payment', 'payment')
+      .leftJoinAndSelect('order.user', 'user')
+      .where('order.id = :orderId', { orderId })
+      .getOne();
     if (!order) {
       throw new Error('Order not found');
     }
@@ -287,7 +299,7 @@ export class OrderService {
     };
   }
 
-  async paymentStatus(id: string, paymentStatus: string) {
+  async paymentStatus(id: string, paymentStatus: string, paymentType: string) {
     const order = await this.orderRepository.findOne({ where: { id } });
     if (!order) {
       return {
@@ -307,7 +319,12 @@ export class OrderService {
 
       }
     }
-    payment.paymentStatus = paymentStatus
+    if (paymentType !== undefined) {
+      payment.paymentType = paymentType
+    }
+    if (paymentStatus !== undefined) {
+      payment.paymentStatus = paymentStatus
+    }
     await this.paymentRepository.save(payment);
 
     return {
