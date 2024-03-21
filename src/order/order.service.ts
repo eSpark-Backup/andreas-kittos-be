@@ -137,7 +137,7 @@ export class OrderService {
     };
   }
 
-  async orderList( page: number, take: number, userId: string) {
+  async orderList( page: number, take: number, userId: string,orderState: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -153,6 +153,11 @@ if(userId!==undefined){
   queryToGetData.andWhere('userId = :userId', { userId });
   queryToGetCount.andWhere('userId = :userId', { userId });
 }
+if(orderState!==undefined){
+  queryToGetData.andWhere('orderState = :orderState', { orderState });
+  queryToGetCount.andWhere('orderState = :orderState', { orderState });
+}
+
     const [query, totalCount] = await Promise.all([
 
      queryToGetData.select([

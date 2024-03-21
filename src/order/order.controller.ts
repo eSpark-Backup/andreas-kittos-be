@@ -58,6 +58,7 @@ export class OrderController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({name:'userId',required:false})
+  @ApiQuery({name:'orderState',required:false})
 
   @swaggerDocs({
     summary: 'Get List of Total Orders(Admin Access)',
@@ -72,11 +73,11 @@ export class OrderController {
     },
   })
 
-  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string){
+  orderList(@Query('page') page?: string,@Query('take') take?: string,@Query('userId') userId?:string,@Query('orderState') orderState?:string){
     
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take,userId);
+    return this.orderService.orderList(+page, +take,userId,orderState);
   }
 
   @Roles('user')
