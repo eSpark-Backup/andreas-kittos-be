@@ -144,7 +144,6 @@ export class OrderService {
     orderState: string,
     paymentStatus: string,
     paymentType: string,
-    orderNumber: string,
     startDate: string,
     endDate: string,
     customerName: string) {
@@ -163,9 +162,15 @@ export class OrderService {
 
     const skip = (page - 1) * take;
 
-    if(customerName){
-      queryToGetData.andWhere('user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR user.phoneNumber LIKE :customerName', { customerName: `%${customerName}%` });
-      queryToGetCount.andWhere('user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR user.phoneNumber LIKE :customerName', { customerName: `%${customerName}%` });
+    if (customerName) {
+      queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
+        customerName: `%${customerName}%`,
+        orderNumber: `${customerName}`, 
+      });
+      queryToGetCount.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
+        customerName: `%${customerName}%`,
+        orderNumber: `${customerName}`, 
+      });
     }
 
     if (startDate) {
@@ -183,10 +188,7 @@ export class OrderService {
       queryToGetCount.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
     }
 
-    if (orderNumber !== undefined) {
-      queryToGetCount.andWhere('order.orderNumber = :orderNumber', { orderNumber });
-      queryToGetData.andWhere('order.orderNumber = :orderNumber', { orderNumber });
-    }
+   
 
     if (paymentType !== undefined) {
       queryToGetData

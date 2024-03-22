@@ -61,8 +61,7 @@ export class OrderController {
   @ApiQuery({ name: 'orderState', required: false })
   @ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending', 'failed', 'success'] })
   @ApiQuery({ name: 'paymentType',required:false, enum: ['COD', 'CARD'] })
-  @ApiQuery({name:'orderNumber',required:false})
-  @ApiQuery({name:'Name/Email/Phone', required:false})
+  @ApiQuery({name:'Order#/Name/Email', required:false})
   @ApiQuery({ name: 'startDate', required:false})
 @ApiQuery({ name: 'endDate', required:false})
 
@@ -86,14 +85,13 @@ export class OrderController {
      @Query('orderState') orderState?: string,
       @Query('paymentStatus') paymentStatus?: string,
         @Query('paymentType') paymentType?: string,
-        @Query('orderNumber') orderNumber?: string,
-        @Query('Name/Email/Phone') customerName?: string,
+        @Query('Order#/Name/Email') customerName?: string,
       @Query('startDate') startDate?: string,
       @Query('endDate') endDate?: string) {
 
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take, userId, orderState, paymentStatus, paymentType,orderNumber,startDate,endDate,customerName);
+    return this.orderService.orderList(+page, +take, userId, orderState, paymentStatus, paymentType,startDate,endDate,customerName);
   }
 
   @Roles('user')
