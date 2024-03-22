@@ -40,16 +40,16 @@ export class CartService {
 
     if (existingCart) {
       for (const itemDto of cartDto.items) {
-       
-        
+
+
         let existingItem;
         for (const cartItem of existingCart.items) {
-            if (String(cartItem.product.id) === String(itemDto.product)) {
-                existingItem = cartItem;
-                break;
-            }
+          if (String(cartItem.product.id) === String(itemDto.product)) {
+            existingItem = cartItem;
+            break;
+          }
         }
-        
+
 
         if (existingItem) {
           existingItem.quantity += itemDto.quantity;
@@ -57,15 +57,13 @@ export class CartService {
           const newItem = new CartItem();
           newItem.quantity = itemDto.quantity;
           newItem.product = itemDto.product;
-          newItem.cart = existingCart.id; // Assign the existing cart to the new item
-          existingCart.items.push(newItem); // Add the new item to the existing cart's items
+          newItem.cart = existingCart.id; 
+          existingCart.items.push(newItem); 
         }
       }
 
-      // Save the updated cart with its items
       await this.cartRepository.save(existingCart);
 
-      // Fetch the updated cart with its items and product details
       const updatedCart = await this.cartRepository
         .createQueryBuilder('cart')
         .leftJoinAndSelect('cart.items', 'items')
