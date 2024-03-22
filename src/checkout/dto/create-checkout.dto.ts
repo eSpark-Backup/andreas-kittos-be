@@ -7,6 +7,13 @@ export class CheckoutDto {
   total: number;
 
   @ApiProperty({
+    description: 'Sub Total amount of the checkout',
+    example: 100.0,
+  })
+  @IsNotEmpty({ message: 'Sub Total cannot be empty' })
+  subTotal: number;
+
+  @ApiProperty({
     description: 'Type of shipping (e.g., express, standard)',
     example: 'express',
   })

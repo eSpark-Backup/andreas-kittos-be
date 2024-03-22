@@ -19,6 +19,9 @@ export class Checkout extends BaseEntity {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   total: number;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  subTotal: number;
+
   @Column({ type: 'varchar', length: 50 })
   shippingType: string;
 

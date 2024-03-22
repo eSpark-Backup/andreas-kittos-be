@@ -55,6 +55,7 @@ export class OrderService {
     const order = new Order();
     order.id = generateOrderId();
     order.total = checkout.total;
+    order.subTotal = checkout.subTotal;
     order.shippingType = checkout.shippingType;
     order.deliveryCharges = checkout.deliveryCharges;
     order.orderNumber = orderNumber.toString();
@@ -141,6 +142,8 @@ export class OrderService {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.category', 'category') 
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.payment', 'payment')
 
@@ -182,6 +185,7 @@ export class OrderService {
         'order.orderNumber',
         'order.orderStatus',
         'order.total',
+        'order.subTotal',
         'order.shippingType',
         'order.deliveryCharges',
         'order.note',
@@ -198,6 +202,9 @@ export class OrderService {
         'user.phoneNumber',
         'orderDetail.id',
         'orderDetail.quantity',
+        'categoryProduct.id',
+        'category.id',
+        'category.name',
         'product.id',
         'product.name',
         'product.price',
@@ -223,6 +230,8 @@ export class OrderService {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.category', 'category') 
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user')
       .andWhere('user.id = :userId', { userId });
@@ -247,6 +256,7 @@ export class OrderService {
         'order.orderNumber',
         'order.orderStatus',
         'order.total',
+        'order.subTotal',
         'order.shippingType',
         'order.deliveryCharges',
         'order.note',
@@ -262,6 +272,9 @@ export class OrderService {
         'user.phoneNumber',
         'orderDetail.id',
         'orderDetail.quantity',
+        'categoryProduct.id', 
+        'category.id',
+        'category.name',
         'product.id',
         'product.name',
         'product.price',
@@ -286,6 +299,8 @@ export class OrderService {
     const order = await this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
+      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.category', 'category') 
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user')
       .where('order.id = :orderId', { orderId })

@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, JoinColumn } from 'typeorm';
 import { BaseEntity } from './base.entity';
 import { CategoryProduct } from './category_product.entity';
 import { Favourite } from './favourite.entity';
@@ -37,6 +37,7 @@ export class Product extends BaseEntity {
     () => CategoryProduct,
     (categoryProduct) => categoryProduct.product,
   )
+  @JoinColumn({ name: 'categoryProduct' })
   categoryProduct: CategoryProduct[];
 
   @OneToMany(() => Favourite, (favourite) => favourite.productId)

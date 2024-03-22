@@ -21,6 +21,7 @@ export class CheckoutService {
   async create(userId: string, checkoutDto: CheckoutDto) {
     const {
       total,
+      subTotal,
       shippingType,
       cartId,
       deliveryCharges,
@@ -72,6 +73,7 @@ export class CheckoutService {
 
     checkout.total = total;
     checkout.shippingType = shippingType;
+    checkout.subTotal = subTotal;
     checkout.user = user;
     checkout.note = note;
     checkout.deliveryCharges = deliveryCharges;
