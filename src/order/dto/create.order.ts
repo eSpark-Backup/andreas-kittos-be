@@ -6,7 +6,7 @@ import { IsNotEmpty, IsOptional, IsString } from "class-validator";
 export class CreateOrderDto {
 
     @ApiProperty({
-        example: 'Card',
+        example: 'CARD or COD',
         description: 'Method of Payment',
         required: true,
     })
