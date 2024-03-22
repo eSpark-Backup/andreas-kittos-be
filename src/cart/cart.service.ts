@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,7 +21,7 @@ export class CartService {
 
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
-  ) {}
+  ) { }
 
   async createCart(userId: Users, simpleCart: simpleCartDto[]) {
     const simpleCartArray = Array.isArray(simpleCart)
@@ -31,21 +32,40 @@ export class CartService {
 
     const existingCart = await this.cartRepository
       .createQueryBuilder('cart')
+      .leftJoinAndSelect('cart.items', 'items')
+      .leftJoinAndSelect('items.product', 'product')
       .where('cart.userId = :userId', { userId })
       .getOne();
 
+
     if (existingCart) {
-      const newItem = new CartItem();
+      for (const itemDto of cartDto.items) {
+       
+        
+        let existingItem;
+        for (const cartItem of existingCart.items) {
+            if (String(cartItem.product.id) === String(itemDto.product)) {
+                existingItem = cartItem;
+                break;
+            }
+        }
+        
 
-      existingCart.items = cartDto.items.map((itemDto) => {
-        newItem.quantity = itemDto.quantity;
-        newItem.product = itemDto.product;
-        newItem.cart = existingCart.id;
-        return newItem;
-      });
+        if (existingItem) {
+          existingItem.quantity += itemDto.quantity;
+        } else {
+          const newItem = new CartItem();
+          newItem.quantity = itemDto.quantity;
+          newItem.product = itemDto.product;
+          newItem.cart = existingCart.id; // Assign the existing cart to the new item
+          existingCart.items.push(newItem); // Add the new item to the existing cart's items
+        }
+      }
 
-      await this.cartItemRepository.save(existingCart.items);
+      // Save the updated cart with its items
+      await this.cartRepository.save(existingCart);
 
+      // Fetch the updated cart with its items and product details
       const updatedCart = await this.cartRepository
         .createQueryBuilder('cart')
         .leftJoinAndSelect('cart.items', 'items')
@@ -53,11 +73,16 @@ export class CartService {
         .where('cart.id = :id', { id: existingCart.id })
         .getOne();
 
+      console.log('Updated Cart:', updatedCart);
+
       return {
         data: updatedCart,
         message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
       };
-    } else {
+    }
+
+
+    else {
       const newCart = new Cart();
       newCart.user = userId;
 

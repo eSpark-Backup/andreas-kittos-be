@@ -35,6 +35,7 @@ import { Pagination } from 'nestjs-typeorm-paginate';
 import { paginateResponse } from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
 import { ChangePasswordDto } from './dto/change.password.dto';
+import { resendEmailTemplate } from 'src/utils/Static html/resendEmail';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -326,7 +327,7 @@ async deleteUser(userId: string) {
     if (userFind) {
       if (!userFind.isVerified) {
         const otphash = await this.generateOtp(email, async (otp: any) => {
-          const modifiedTemplate = emailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
+          const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
           await sendEmail(email, 'Verify Email OTP', modifiedTemplate);
         });
         return {
