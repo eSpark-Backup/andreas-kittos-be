@@ -187,7 +187,6 @@ export class OrderService {
       queryToGetCount
         .andWhere('payment.paymentStatus = :paymentStatus', { paymentStatus });
     }
-    console.log(queryToGetData.getSql());
 
     if (userId !== undefined) {
       queryToGetData.andWhere('userId = :userId', { userId });
