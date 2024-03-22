@@ -138,20 +138,35 @@ export class OrderService {
     };
   }
 
-  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string, paymentType: string,orderNumber:string,startDate:string,endDate:string) {
+  async orderList(page: number,
+    take: number,
+    userId: string,
+    orderState: string,
+    paymentStatus: string,
+    paymentType: string,
+    orderNumber: string,
+    startDate: string,
+    endDate: string,
+    customerName: string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-      .leftJoinAndSelect('categoryProduct.category', 'category') 
+      .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.payment', 'payment')
 
     const queryToGetCount =
       this.orderRepository.createQueryBuilder('order')
         .leftJoinAndSelect('order.payment', 'payment')
+        .leftJoinAndSelect('order.user', 'user')
 
     const skip = (page - 1) * take;
+
+    if(customerName){
+      queryToGetData.andWhere('user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR user.phoneNumber LIKE :customerName', { customerName: `%${customerName}%` });
+      queryToGetCount.andWhere('user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR user.phoneNumber LIKE :customerName', { customerName: `%${customerName}%` });
+    }
 
     if (startDate) {
       const startDateObj = new Date(startDate);
@@ -168,7 +183,7 @@ export class OrderService {
       queryToGetCount.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
     }
 
-    if(orderNumber !== undefined){
+    if (orderNumber !== undefined) {
       queryToGetCount.andWhere('order.orderNumber = :orderNumber', { orderNumber });
       queryToGetData.andWhere('order.orderNumber = :orderNumber', { orderNumber });
     }
@@ -251,7 +266,7 @@ export class OrderService {
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-      .leftJoinAndSelect('categoryProduct.category', 'category') 
+      .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user')
       .andWhere('user.id = :userId', { userId });
@@ -292,7 +307,7 @@ export class OrderService {
         'user.phoneNumber',
         'orderDetail.id',
         'orderDetail.quantity',
-        'categoryProduct.id', 
+        'categoryProduct.id',
         'category.id',
         'category.name',
         'product.id',
@@ -320,7 +335,7 @@ export class OrderService {
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-      .leftJoinAndSelect('categoryProduct.category', 'category') 
+      .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user')
       .where('order.id = :orderId', { orderId })
