@@ -138,7 +138,7 @@ export class OrderService {
     };
   }
 
-  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string, paymentType: string) {
+  async orderList(page: number, take: number, userId: string, orderState: string, paymentStatus: string, paymentType: string,orderNumber:string,startDate:string,endDate:string) {
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -152,6 +152,26 @@ export class OrderService {
         .leftJoinAndSelect('order.payment', 'payment')
 
     const skip = (page - 1) * take;
+
+    if (startDate) {
+      const startDateObj = new Date(startDate);
+      startDateObj.setHours(0, 0, 0, 0); // Set time to beginning of the day
+      console.log(startDateObj);
+      queryToGetData.andWhere('order.createdAt >= :startDate', { startDate: startDateObj });
+      queryToGetCount.andWhere('order.createdAt >= :startDate', { startDate: startDateObj });
+    }
+    if (endDate) {
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999); // Set time to end of the day
+      console.log(endDateObj);
+      queryToGetData.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
+      queryToGetCount.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
+    }
+
+    if(orderNumber !== undefined){
+      queryToGetCount.andWhere('order.orderNumber = :orderNumber', { orderNumber });
+      queryToGetData.andWhere('order.orderNumber = :orderNumber', { orderNumber });
+    }
 
     if (paymentType !== undefined) {
       queryToGetData
@@ -181,6 +201,7 @@ export class OrderService {
     const [query, totalCount] = await Promise.all([
 
       queryToGetData.select([
+        'order.createdAt',
         'order.id',
         'order.orderNumber',
         'order.orderStatus',
