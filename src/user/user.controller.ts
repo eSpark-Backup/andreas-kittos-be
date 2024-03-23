@@ -288,7 +288,7 @@ export class UserController {
     return await this.userService.changeUserStatus(userId, userStatusDto);
   }
 
-  @Roles('admin')
+  @Roles('user')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAuthGuard, RoleGuard)
   @Put('change-password')

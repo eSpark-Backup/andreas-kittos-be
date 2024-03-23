@@ -118,7 +118,6 @@ export class OrderController {
   }
 
   @Roles('user')
-  @Roles('admin')
   @Get('order-detail/:orderId')
   @swaggerDocs({
     summary: 'Get Order Detail',
