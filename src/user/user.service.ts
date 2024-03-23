@@ -661,6 +661,7 @@ async deleteUser(userId: string) {
         'user.userStatus',
         'user.phoneNumber',
         'user.profileImage',
+        'user.displayName'
       ])
 
       .limit(take)
