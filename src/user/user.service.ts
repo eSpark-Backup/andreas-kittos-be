@@ -538,6 +538,16 @@ async deleteUser(userId: string) {
         };
       }
     } else {
+      if(findUser.email !== null && findUser.phoneNumber !== null)
+      {
+        await this.usersRepo.update(userId, {
+          ...updateUserDto,
+          email: undefined,
+          phoneNumber: undefined,
+        });
+
+        return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: false };
+      }
       if (findUser.email !== updateUserDto.email) {
         const otphash = await this.generateOtp(
           updateUserDto.email,
@@ -578,9 +588,9 @@ async deleteUser(userId: string) {
         promiseOfCreateAndUpdateUser: any = null;
       if (this.isEmail(emailPhone)) {
         userFind = await this.usersRepo.findOne({
-          where: { email: emailPhone },
+          where: { id: userId },
         });
-        if (userFind && userFind.isVerified) {
+        if (userFind && userFind.isVerified && (userFind.email !== null && userFind.phoneNumber !== null) ) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
