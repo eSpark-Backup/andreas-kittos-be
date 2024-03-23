@@ -57,6 +57,10 @@ export class UpdateUserDto {
   @ApiProperty({ type: String })
   @IsOptional()
   readonly phoneNumber: string;
+
+  @ApiProperty({ type: String, required: false })
+  @IsOptional()
+  readonly displayName: string;
 }
 
 export class LoginDto {
