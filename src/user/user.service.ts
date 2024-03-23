@@ -599,9 +599,9 @@ async deleteUser(userId: string) {
         promiseOfCreateAndUpdateUser = this.usersRepo.update(userId, user);
       } else {
         userFind = await this.usersRepo.findOne({
-          where: { phoneNumber: emailPhone, isVerified: true },
+          where: {id: userId },
         });
-        if (userFind) {
+        if (userFind && (userFind.email !== null && userFind.phoneNumber !== null)) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
