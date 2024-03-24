@@ -190,7 +190,7 @@ export class UserController {
   @Roles('user')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAuthGuard, RoleGuard)
-  @Post('verify-new-email-phone')
+  @Post('verify-new-email-phone-for-update')
   @swaggerDocs({
     summary: 'Update Email or Phone',
     type: VerifyOtpDto,
