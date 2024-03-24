@@ -55,9 +55,6 @@ export class Address extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user: Users;
 
-  @OneToMany(() => Checkout, (checkout) => checkout.billingAddress)
-  billingCheckouts: Checkout[];
-
   @OneToMany(() => Checkout, (checkout) => checkout.shippingAddress)
   shippingCheckouts: Checkout[];
 }

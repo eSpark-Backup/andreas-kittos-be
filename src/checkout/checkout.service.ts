@@ -25,7 +25,6 @@ export class CheckoutService {
       shippingType,
       cartId,
       deliveryCharges,
-      billingAddressId,
       shippingAddressId,
       deliveryDate,
       note,
@@ -48,16 +47,6 @@ export class CheckoutService {
       checkout = new Checkout();
     }
 
-    if (!billingAddressId) {
-      const address = await this.addressRepository
-        .createQueryBuilder('address')
-        .leftJoinAndSelect('address.user', 'user')
-        .where('address.user = :userId', { userId })
-        .andWhere('address.isDefault = true')
-        .andWhere('address.type = :type', { type: 'billing' })
-        .getOne();
-      checkout.billingAddress = address;
-    }
 
     if (!shippingAddressId) {
       const address = await this.addressRepository
@@ -88,17 +77,6 @@ export class CheckoutService {
     }
     checkout.cart = cart;
 
-    if (billingAddressId) {
-      const billingAddress = await this.addressRepository
-        .createQueryBuilder('address')
-        .where('address.id = :billingAddressId', { billingAddressId })
-        .getOne();
-      if (!billingAddress) {
-        throw new Error('Billing address not found');
-      }
-      checkout.billingAddress = billingAddress;
-    }
-
     if (shippingAddressId) {
       const shippingAddress = await this.addressRepository
         .createQueryBuilder('address')
@@ -124,7 +102,6 @@ export class CheckoutService {
       .createQueryBuilder('checkout')
       .leftJoinAndSelect('checkout.cart', 'cart')
       .leftJoinAndSelect('cart.items', 'items')
-      .leftJoinAndSelect('checkout.billingAddress', 'billingAddress')
       .leftJoinAndSelect('checkout.shippingAddress', 'shippingAddress')
       .where('checkout.user = :userId', { userId })
       .getMany();

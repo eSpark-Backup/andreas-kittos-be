@@ -42,10 +42,6 @@ export class Checkout extends BaseEntity {
   @JoinColumn({ name: 'cartId' })
   cart: Cart;
 
-  @ManyToOne(() => Address, (address) => address.billingCheckouts)
-  @JoinColumn({ name: 'billingAddressId' })
-  billingAddress: Address;
-
   @ManyToOne(() => Address, (address) => address.shippingCheckouts)
   @JoinColumn({ name: 'shippingAddressId' })
   shippingAddress: Address;

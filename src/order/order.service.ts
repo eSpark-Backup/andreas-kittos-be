@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { CartItem, Checkout, Users } from 'src/entity';
-import { Order } from 'src/entity/order.entity';
+import { Order, orderByState } from 'src/entity/order.entity';
 import { OrderDetail } from 'src/entity/orderDetail.entity';
 import { extractAddressData } from 'src/utils/function/extractAddress';
 import { generateOrderId } from 'src/utils/function/uniqueOrderId';
@@ -41,7 +41,6 @@ export class OrderService {
       .leftJoinAndSelect('checkout.cart', 'cart')
       .leftJoinAndSelect('cart.items', 'items')
       .leftJoinAndSelect('items.product', 'product')
-      .leftJoinAndSelect('checkout.billingAddress', 'billingAddress')
       .leftJoinAndSelect('checkout.shippingAddress', 'shippingAddress')
       .where('checkout.user = :userId', { userId })
       .getOne();
@@ -62,11 +61,10 @@ export class OrderService {
     order.note = checkout.note;
     order.user = user;
     order.deliveryDate = checkout.deliveryDate;
-    order.billingAddress = extractAddressData(checkout.billingAddress);
     order.shippingAddress = extractAddressData(checkout.shippingAddress);
     order.orderStatus = {
       scheduled: true,
-      scheduledDate: Date.now().toString(),
+      scheduledDate: this.getCurrentDateFormatted(),
       picked: false,
       pickedDate: '',
       washing: false,
@@ -97,6 +95,8 @@ export class OrderService {
       message: 'Order created successfully',
     };
   }
+  
+  
 
   async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto) {
     const order = await this.orderRepository.createQueryBuilder('order')
@@ -111,24 +111,25 @@ export class OrderService {
     }
 
     if (orderState !== undefined) {
-      order.orderState = orderState;
+      order.orderState = orderByState[orderState];
     }
     if (scheduled !== undefined) {
       order.orderStatus.scheduled = scheduled;
+      order.orderStatus.scheduledDate = this.getCurrentDateFormatted();
     }
     if (picked !== undefined) {
       order.orderStatus.picked = picked;
-      order.orderStatus.pickedDate = Date.now().toString();
+      order.orderStatus.pickedDate = this.getCurrentDateFormatted();
 
     }
     if (washing !== undefined) {
       order.orderStatus.washing = washing;
-      order.orderStatus.washingDate = Date.now().toString();
+      order.orderStatus.washingDate = this.getCurrentDateFormatted();
 
     }
     if (delivered !== undefined) {
       order.orderStatus.delivered = delivered;
-      order.orderStatus.deliveredDate = Date.now().toString();
+      order.orderStatus.deliveredDate = this.getCurrentDateFormatted();
 
     }
     await this.orderRepository.save(order);
@@ -386,8 +387,19 @@ export class OrderService {
       message: CONSTANT_RESPONSE.PAYMENT_SUCCESS
     };
   }
+  async orderStatusList() {
+    const values = Object.values(orderByState);
+    return {
+      data: values,
+      message: CONSTANT_RESPONSE.GET_ALL
+    };
+  }
+  
 
-
+  getCurrentDateFormatted() {
+    const currentDate = new Date();
+    return currentDate.toISOString().slice(0, 10);
+  }
 
 
 

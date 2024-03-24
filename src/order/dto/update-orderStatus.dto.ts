@@ -1,8 +1,21 @@
 /* eslint-disable prettier/prettier */
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsEnum, IsOptional, IsString } from "class-validator";
+import { orderByState } from "src/entity/order.entity";
 
 /* eslint-disable prettier/prettier */
+
+enum OrderState {
+    Pending = 'pending',
+    Processing = 'processing',
+    Completed = 'completed',
+    Cancelled = 'cancelled',
+    Refunded = 'refunded',
+    Failed = 'failed',
+    OnHold = 'on-hold',
+
+
+  }
 export class UpdateOrderStatusDto {
     @ApiProperty({
         example: true,
@@ -49,11 +62,13 @@ export class UpdateOrderStatusDto {
         example: 'pending',
         description: 'Current State of Order',
         required: false,
+        type:'string',
+        enum: orderByState,
     })
     @IsString()
     @IsOptional()
 
-    orderState?: string;
+    orderState?: orderByState;
 
    
 }

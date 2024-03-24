@@ -13,6 +13,15 @@ import { Users } from './user.entity';
 import { OrderDetail } from './orderDetail.entity';
 import { Payment } from './payment.entity';
 
+export enum orderByState {
+  pending = 'pending',
+  processing = 'processing',
+  completed = 'completed',
+  cancelled = 'cancelled',
+  refunded = 'refunded',
+  failed = 'failed',
+  onhold = 'on-hold',
+}
 @Entity()
 export class Order extends BaseEntity {
   @PrimaryColumn()
@@ -52,27 +61,12 @@ export class Order extends BaseEntity {
   @Column({ type: 'varchar' })
   deliveryDate: string;
 
-  @Column({ type: 'varchar' ,default: 'pending'})
-  orderState: string;
+  @Column({ type: 'enum', enum: orderByState, default: orderByState.pending })
+  orderState: orderByState;
 
   @OneToOne(() => Payment, (payment) => payment.order, { cascade: true })
   payment: Payment;
 
-  @Column('json')
-  billingAddress: {
-    name: string;
-    email: string;
-    phoneNumber: string;
-    street: string;
-    city: string;
-    state: string;
-    country: string;
-    zipCode: string;
-    apartment?: string;
-    block?: string;
-    longitude?: string;
-    latitude?: string;
-  };
 
   @Column('json')
   shippingAddress: {

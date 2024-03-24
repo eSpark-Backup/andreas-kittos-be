@@ -35,9 +35,7 @@ export class CreateUserDto {
   @IsOptional()
   readonly profileImage: string;
 
-  @ApiProperty({ type: String, required: false })
-  @IsOptional()
-  readonly displayName: string;
+  displayName?: string;
 
   readonly isVerified?: boolean;
 }

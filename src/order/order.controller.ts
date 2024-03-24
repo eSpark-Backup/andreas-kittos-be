@@ -9,6 +9,7 @@ import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { OrderService } from './order.service';
 import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
+import { orderByState } from 'src/entity/order.entity';
 @Controller('order')
 @ApiTags('Order')
 @ApiBearerAuth('jwt')
@@ -58,7 +59,7 @@ export class OrderController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'userId', required: false })
-  @ApiQuery({ name: 'orderState', required: false })
+  @ApiQuery({ name: 'orderState', required: false,enum:orderByState })
   @ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending', 'failed', 'success'] })
   @ApiQuery({ name: 'paymentType',required:false, enum: ['COD', 'CARD'] })
   @ApiQuery({name:'Order#/Name/Email', required:false})
@@ -110,7 +111,7 @@ export class OrderController {
   })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'orderState', required: false })
+  @ApiQuery({ name: 'orderState', required: false,enum:orderByState })
   userOrderDetail(@UserId() userId: string, @Query('page') page?: string, @Query('take') take?: string, @Query('orderState') orderState?: string) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
@@ -154,6 +155,24 @@ export class OrderController {
   })
   updatePaymentStatus(@Param('id') orderId: string, @Query('paymentStatus') paymentStatus?: string, @Query('paymentType') paymentType?: string) {
     return this.orderService.paymentStatus(orderId, paymentStatus,paymentType);
+  }
+
+   @Roles('user')
+   @Get('order-status-list')
+   @swaggerDocs({
+    summary: 'Get Order Status List',
+    type: null,
+    goodResponse: {
+      status: 200,
+      description: CONSTANT_RESPONSE.GET_ALL,
+    },
+    badresponse: {
+      status: 400,
+      description: CONSTANT_RESPONSE.NOT_EXSIST,
+    },
+  })
+  orderStatusList(){
+    return this.orderService.orderStatusList();
   }
 
 }

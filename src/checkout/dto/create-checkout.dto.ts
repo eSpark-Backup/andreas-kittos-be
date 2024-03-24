@@ -52,14 +52,6 @@ export class CheckoutDto {
   cartId: string;
 
   @ApiProperty({
-    description: 'Billing address ID associated with the checkout',
-    example: 'a125f9b0-d951-48d1-9e02-843e0b1a3789',
-  })
-  @IsString()
-  @IsOptional({ message: 'If Null ,then default will be Selected' })
-  billingAddressId: string;
-
-  @ApiProperty({
     description: 'Shipping address ID associated with the checkout',
     example: 'a125f9b0-d951-48d1-9e02-843e0b1a3789',
   })

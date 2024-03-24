@@ -30,7 +30,7 @@ import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { emailTemplate } from 'src/utils/Static html/resetPassword';
-import { welcomeEmailTemplate} from 'src/utils/Static html/welcomeEmail';
+import { welcomeEmailTemplate } from 'src/utils/Static html/welcomeEmail';
 import { Pagination } from 'nestjs-typeorm-paginate';
 import { paginateResponse } from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
@@ -55,7 +55,7 @@ export class UserService {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
   }
-async deleteUser(userId: string) {
+  async deleteUser(userId: string) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
@@ -64,16 +64,14 @@ async deleteUser(userId: string) {
     return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
   }
 
-  async changePassword(userId:string,changePasswordDto:ChangePasswordDto)
-  {
+  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
     const verifyPass = verifyPassword(changePasswordDto.oldPassword, user.password);
     if (verifyPass) {
-      if(changePasswordDto.oldPassword === changePasswordDto.newPassword)
-      {
+      if (changePasswordDto.oldPassword === changePasswordDto.newPassword) {
         throw new NotFoundException('Old password and new password cannot be same');
       }
       const hashedPassword = hashPassword(changePasswordDto.newPassword);
@@ -95,6 +93,8 @@ async deleteUser(userId: string) {
     return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
   }
   async signUp(createUserDto: CreateUserDto) {
+    createUserDto.displayName = createUserDto.firstName + ' ' + createUserDto.lastName;
+
     try {
       const userFind = await this.usersRepo.findOne({
         where: [
@@ -527,8 +527,8 @@ async deleteUser(userId: string) {
       const updatedUser = await this.usersRepo.update(userId, updateUserDto);
 
       if (updatedUser.affected === 1) {
-      const  user= await this.getUserProfile(userId);
-     
+        const user = await this.getUserProfile(userId);
+
         return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
       } else {
         return {
@@ -538,8 +538,7 @@ async deleteUser(userId: string) {
         };
       }
     } else {
-      if(findUser.email !== null && findUser.phoneNumber !== null)
-      {
+      if (findUser.email !== null && findUser.phoneNumber !== null) {
         await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
@@ -590,7 +589,7 @@ async deleteUser(userId: string) {
         userFind = await this.usersRepo.findOne({
           where: { id: userId },
         });
-        if (userFind && userFind.isVerified && (userFind.email !== null && userFind.phoneNumber !== null) ) {
+        if (userFind && userFind.isVerified && (userFind.email !== null && userFind.phoneNumber !== null)) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
@@ -599,7 +598,7 @@ async deleteUser(userId: string) {
         promiseOfCreateAndUpdateUser = this.usersRepo.update(userId, user);
       } else {
         userFind = await this.usersRepo.findOne({
-          where: {id: userId },
+          where: { id: userId },
         });
         if (userFind && (userFind.email !== null && userFind.phoneNumber !== null)) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
@@ -641,24 +640,24 @@ async deleteUser(userId: string) {
     }
     if (user) {
       delete user.password;
-  }
+    }
     return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
   async getUserList(page: number, take: number, userStatus: string) {
-    const queryToGetData =  this.usersRepo.createQueryBuilder('user')
-    .where('user.role = :role', { role: 'user' })
+    const queryToGetData = this.usersRepo.createQueryBuilder('user')
+      .where('user.role = :role', { role: 'user' })
 
 
-    const queryToGetCount =  this.usersRepo.createQueryBuilder('user')
-    .where('user.role = :role', { role: 'user' })
+    const queryToGetCount = this.usersRepo.createQueryBuilder('user')
+      .where('user.role = :role', { role: 'user' })
 
     if (userStatus !== undefined) {
       queryToGetData.andWhere(`user.userStatus = '${userStatus}'`);
       queryToGetCount.andWhere(`user.userStatus = '${userStatus}'`);
-    
-      
-  }
+
+
+    }
 
     const skip = (page - 1) * take;
 
@@ -674,18 +673,18 @@ async deleteUser(userId: string) {
         'user.displayName'
       ])
 
-      .limit(take)
-      .offset(skip)
-      .orderBy('user.createdAt', 'DESC')
-      .getMany(),
+        .limit(take)
+        .offset(skip)
+        .orderBy('user.createdAt', 'DESC')
+        .getMany(),
       queryToGetCount.getCount(),
     ]);
 
-   
+
     return {
-      data:paginateResponse({ query, totalCount, take, page }),
+      data: paginateResponse({ query, totalCount, take, page }),
       message: CONSTANT_RESPONSE.RECORD_FOUND,
     }
-    
+
   }
 }
