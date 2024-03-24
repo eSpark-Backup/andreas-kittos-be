@@ -513,11 +513,24 @@ export class UserService {
       (updateUserDto.email != undefined &&
         updateUserDto.phoneNumber == undefined)
     ) {
-      return {
-        data: null,
-        message: CONSTANT_RESPONSE.UPDATE_FAILED,
-        status: false,
-      };
+
+      const updatedUser = await this.usersRepo.update(userId, {
+        ...updateUserDto,
+        email: undefined,
+        phoneNumber: undefined,
+      });
+
+      if (updatedUser.affected === 1) {
+        const user = await this.getUserProfile(userId);
+
+        return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+      } else {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.UPDATE_REJECTION,
+          status: false,
+        };
+      }
     }
     if (
       (updateUserDto.email == null && updateUserDto.phoneNumber == null) ||
