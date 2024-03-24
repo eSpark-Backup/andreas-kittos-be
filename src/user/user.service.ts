@@ -200,6 +200,9 @@ export class UserService {
       if (!userFind) {
         throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
       }
+      if(userFind.password== null){
+        throw new NotFoundException('Invalid Login Method');
+      }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
         if (userFind.isVerified === false) {
