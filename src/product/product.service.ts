@@ -27,7 +27,7 @@ export class ProductService {
     private favouriteRepository: Repository<Favourite>,
 
     private cacheService: CacheService,
-  ) {}
+  ) { }
 
   async create(file: any, createProductDto: CreateProductDto) {
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(
@@ -72,10 +72,10 @@ export class ProductService {
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-          data: productResult,
-          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-          status: false,
-        };
+        data: productResult,
+        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+        status: false,
+      };
     return result;
   }
 
@@ -162,7 +162,7 @@ export class ProductService {
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.product', 'product')
-      
+
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
     const queryToGetCount = this.productCategoryRepository
@@ -179,18 +179,23 @@ export class ProductService {
     }
 
     if (productName != null) {
-      queryToGetData.andWhere(`product.name = '${productName}'`);
-      queryToGetCount.andWhere(`product.name = '${productName}'`);
-    }
-    if (maxPrice != null && minPrice != null) {
-      queryToGetData.andWhere(
-          `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
-      );
-      queryToGetCount.andWhere(
-          `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
-      );
+      const parameterValue = '%' + productName + '%';
+      queryToGetData.andWhere('product.name LIKE :productName');
+      queryToGetData.setParameter('productName', parameterValue);
+  
+      queryToGetCount.andWhere('product.name LIKE :productName');
+      queryToGetCount.setParameter('productName', parameterValue);
   }
   
+    if (maxPrice != null && minPrice != null) {
+      queryToGetData.andWhere(
+        `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
+      );
+      queryToGetCount.andWhere(
+        `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
+      );
+    }
+
 
     const skip = (page - 1) * take;
     const [query, totalCount] = await Promise.all([

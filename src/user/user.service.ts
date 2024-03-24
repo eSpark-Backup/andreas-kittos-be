@@ -538,7 +538,7 @@ export class UserService {
         };
       }
     } else {
-      if (findUser.email !== null && findUser.phoneNumber !== null) {
+      if (findUser.email !== null && findUser.phoneNumber !== null  ) {
         await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
@@ -547,16 +547,24 @@ export class UserService {
 
         return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: false };
       }
-      if (findUser.email !== updateUserDto.email) {
+      if (findUser.email !== updateUserDto.email && findUser.phoneNumber == updateUserDto.phoneNumber) {
+        await this.usersRepo.update(userId, {
+          ...updateUserDto,
+          email: undefined,
+          phoneNumber: undefined,
+        });
+        const userCheck = await this.usersRepo.findOne({
+          where: { email: updateUserDto.email },
+        });
+        if(userCheck){
+          return { message: CONSTANT_RESPONSE.EMAIL_ALREADY_EXSIST, status: false };
+        }
+        else{
         const otphash = await this.generateOtp(
           updateUserDto.email,
           async (otp: any) => {
             await sendEmail(updateUserDto.email, 'Verify Email OTP', otp);
-            await this.usersRepo.update(userId, {
-              ...updateUserDto,
-              email: undefined,
-              phoneNumber: undefined,
-            });
+           
           },
         );
         return {
@@ -564,14 +572,30 @@ export class UserService {
           message: CONSTANT_RESPONSE.RESEND_EMAIL,
         };
       }
-      if (findUser.phoneNumber !== updateUserDto.phoneNumber) {
+      }
+      if (findUser.phoneNumber !== updateUserDto.phoneNumber && findUser.email == updateUserDto.email) {
         await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
           phoneNumber: undefined,
         });
+        const userCheck = await this.usersRepo.findOne({
+          where: { phoneNumber: updateUserDto.phoneNumber },
+        });
+        if(userCheck){
+          return { message: CONSTANT_RESPONSE.USER_PHONE_ALREADY_EXSIST, status: false };
+        }
+        else{
         return this.sendOtp(updateUserDto.phoneNumber);
+        }
       }
+      else {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.UPDATE_FAILED,
+          status: false,
+        };
+        }
     }
   }
 

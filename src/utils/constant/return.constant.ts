@@ -31,4 +31,6 @@ export const CONSTANT_RESPONSE = {
   PRODUCT_REMOVED: 'Product removed from favourite successfully',
   UPDATE_FAILED: 'Failed to Update',
   PAYMENT_SUCCESS: 'Payment status updated successfully',
+  USER_PHONE_ALREADY_EXSIST: 'Phone number already associated with another account',
+  EMAIL_ALREADY_EXSIST: 'Email already associated with another account',
 };
