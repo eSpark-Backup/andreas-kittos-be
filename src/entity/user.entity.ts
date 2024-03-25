@@ -70,5 +70,6 @@ export class Users extends BaseEntity {
   checkouts: Checkout[];
 
   @OneToMany(() => Order, (order) => order.user)
+  
   orders: Order[];
 }

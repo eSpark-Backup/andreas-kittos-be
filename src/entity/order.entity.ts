@@ -34,12 +34,16 @@ export class Order extends BaseEntity {
   orderStatus: {
     scheduled: boolean;
     scheduledDate: string;
+    scheduledReason: string;
     picked: boolean;
     pickedDate: string;
+    pickedReason: string;
     washing: boolean;
     washingDate: string;
+    washingReason: string;
     delivered: boolean;
     deliveredDate: string;
+    deliveredReason: string;
   };
 
 

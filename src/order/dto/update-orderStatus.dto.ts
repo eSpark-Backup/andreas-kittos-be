@@ -70,5 +70,19 @@ export class UpdateOrderStatusDto {
 
     orderState?: orderByState;
 
+
+    @ApiProperty({
+        example: 'Order is Picked By Rider',
+        description: 'Reason to change the state of order',
+        required: false,
+        type:'string',
+    })
+    @IsString()
+    @IsOptional()
+
+    reason?: string;
+
+
+
    
 }

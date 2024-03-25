@@ -10,7 +10,7 @@ import { Repository } from 'typeorm';
 import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
 import { Payment } from 'src/entity/payment.entity';
-import { paginateResponse } from 'src/utils/function/pagination';
+import { paginateResponse, paginateResponseforTotal } from 'src/utils/function/pagination';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 
 @Injectable()
@@ -65,12 +65,16 @@ export class OrderService {
     order.orderStatus = {
       scheduled: true,
       scheduledDate: this.getCurrentDateFormatted(),
+      scheduledReason: 'Customer placed the Order',
       picked: false,
       pickedDate: '',
+      pickedReason: '',
       washing: false,
       washingDate: '',
+      washingReason: '',
       delivered: false,
-      deliveredDate: checkout.deliveryDate
+      deliveredDate: checkout.deliveryDate,
+      deliveredReason: '',
     };
     order.orderDetail = checkout.cart.items.map(cartItem => {
       const orderDetail = new OrderDetail();
@@ -95,8 +99,8 @@ export class OrderService {
       message: 'Order created successfully',
     };
   }
-  
-  
+
+
 
   async updateOrderStatus(orderId: string, updateOrderStatusDto: UpdateOrderStatusDto) {
     const order = await this.orderRepository.createQueryBuilder('order')
@@ -105,7 +109,7 @@ export class OrderService {
       .leftJoinAndSelect('order.payment', 'payment')
       .where('order.id = :orderId', { orderId })
       .getOne();
-    const { scheduled, picked, washing, delivered, orderState } = updateOrderStatusDto;
+    const { scheduled, picked, washing, delivered, orderState,reason } = updateOrderStatusDto;
     if (!order) {
       throw new Error('Order not found');
     }
@@ -116,20 +120,24 @@ export class OrderService {
     if (scheduled !== undefined) {
       order.orderStatus.scheduled = scheduled;
       order.orderStatus.scheduledDate = this.getCurrentDateFormatted();
+      order.orderStatus.scheduledReason = reason;
     }
     if (picked !== undefined) {
       order.orderStatus.picked = picked;
       order.orderStatus.pickedDate = this.getCurrentDateFormatted();
+      order.orderStatus.pickedReason = reason;
 
     }
     if (washing !== undefined) {
       order.orderStatus.washing = washing;
       order.orderStatus.washingDate = this.getCurrentDateFormatted();
+      order.orderStatus.washingReason = reason;
 
     }
     if (delivered !== undefined) {
       order.orderStatus.delivered = delivered;
       order.orderStatus.deliveredDate = this.getCurrentDateFormatted();
+      order.orderStatus.deliveredReason = reason;
 
     }
     await this.orderRepository.save(order);
@@ -148,6 +156,7 @@ export class OrderService {
     startDate: string,
     endDate: string,
     customerName: string) {
+    let userOrderData
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -155,6 +164,7 @@ export class OrderService {
       .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.user', 'user')
       .leftJoinAndSelect('order.payment', 'payment')
+
 
     const queryToGetCount =
       this.orderRepository.createQueryBuilder('order')
@@ -166,11 +176,11 @@ export class OrderService {
     if (customerName) {
       queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
         customerName: `%${customerName}%`,
-        orderNumber: `${customerName}`, 
+        orderNumber: `${customerName}`,
       });
       queryToGetCount.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
         customerName: `%${customerName}%`,
-        orderNumber: `${customerName}`, 
+        orderNumber: `${customerName}`,
       });
     }
 
@@ -189,7 +199,7 @@ export class OrderService {
       queryToGetCount.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
     }
 
-   
+
 
     if (paymentType !== undefined) {
       queryToGetData
@@ -209,6 +219,28 @@ export class OrderService {
     if (userId !== undefined) {
       queryToGetData.andWhere('userId = :userId', { userId });
       queryToGetCount.andWhere('userId = :userId', { userId });
+      const totalordersforUser = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoin('order.user', 'user')
+        .select(['user.id', 'COUNT(order.id) as orderCount'])
+        .where('user.id = :userId', { userId: userId }) // Filter by userId
+        .getRawMany();
+
+
+
+
+      const completedOrderCount = await this.orderRepository
+        .createQueryBuilder('order')
+        .leftJoin('order.user', 'user')
+        .where('user.id = :userId', { userId: userId }) // Filter by userId
+        .andWhere('order.orderState = :orderState', { orderState: 'completed' }) // Filter by orderState
+        .getCount();
+
+      userOrderData = {
+        orderCount: totalordersforUser[0]?.orderCount || 0,
+        completedOrderCount: completedOrderCount,
+      };
+
     }
     if (orderState !== undefined) {
       queryToGetData.andWhere('orderState = :orderState', { orderState });
@@ -249,18 +281,18 @@ export class OrderService {
         'product.price',
         'product.productImage',
       ])
-
         .limit(take)
         .offset(skip)
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
+
+
     ]);
 
 
-
     return {
-      data: paginateResponse({ query, totalCount, take, page }),
+      data: paginateResponseforTotal({ query, totalCount, userOrderData, take, page }),
       message: 'Order list',
     };
   }
@@ -279,6 +311,8 @@ export class OrderService {
 
     const queryToGetCount =
       this.orderRepository.createQueryBuilder('order')
+        .leftJoinAndSelect('order.user', 'user')
+        .andWhere('user.id = :userId', { userId });
 
 
     if (orderState) {
@@ -394,7 +428,7 @@ export class OrderService {
       message: CONSTANT_RESPONSE.GET_ALL
     };
   }
-  
+
 
   getCurrentDateFormatted() {
     const currentDate = new Date();

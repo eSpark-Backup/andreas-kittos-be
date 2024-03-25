@@ -36,6 +36,7 @@ import { paginateResponse } from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
 import { ChangePasswordDto } from './dto/change.password.dto';
 import { resendEmailTemplate } from 'src/utils/Static html/resendEmail';
+import { error } from 'console';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -175,6 +176,11 @@ export class UserService {
             message: CONSTANT_RESPONSE.SEND_OTP,
           };
         }
+        else if(!userFind && createUserDto.phoneNumber){
+          throw new NotFoundException('Phone number not found or Verified');
+      }
+    
+
       }
     } catch (error) {
       return { message: error.message, status: false };
@@ -711,7 +717,9 @@ export class UserService {
         'user.userStatus',
         'user.phoneNumber',
         'user.profileImage',
-        'user.displayName'
+        'user.displayName',
+        'user.createdAt',
+        
       ])
 
         .limit(take)

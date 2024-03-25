@@ -13,3 +13,18 @@ export function paginateResponse({ query, totalCount, take, page }) {
   };
   return { items: query, meta: meta };
 }
+
+export function paginateResponseforTotal({ query, totalCount, userOrderData, take, page }) {
+  const totalItems = +totalCount;
+  const totalPages = Math.ceil(totalItems / take);
+
+  const meta: IPaginationMeta = {
+    totalItems: totalItems,
+    totalPages: totalPages,
+    itemsPerPage: take,
+    itemCount: Math.min(take, query.length),
+    currentPage: page,
+  };
+
+  return { items: query, userOrderData, meta: meta };
+}
