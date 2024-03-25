@@ -579,7 +579,8 @@ export class UserService {
         const otphash = await this.generateOtp(
           updateUserDto.email,
           async (otp: any) => {
-            await sendEmail(updateUserDto.email, 'Verify Email OTP', otp);
+            const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, findUser.firstName + ' ' + findUser.lastName).replace(/\${otp}/g, otp);
+            await sendEmail(updateUserDto.email, 'Verify Email OTP', modifiedTemplate);
            
           },
         );
