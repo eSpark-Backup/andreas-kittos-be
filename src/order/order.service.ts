@@ -1,17 +1,19 @@
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CartItem, Checkout, Users } from 'src/entity';
+import { CartItem, Category, Checkout, Product, UserRole, Users } from 'src/entity';
 import { Order, orderByState } from 'src/entity/order.entity';
 import { OrderDetail } from 'src/entity/orderDetail.entity';
 import { extractAddressData } from 'src/utils/function/extractAddress';
 import { generateOrderId } from 'src/utils/function/uniqueOrderId';
-import { Repository } from 'typeorm';
+import { MoreThanOrEqual, Repository } from 'typeorm';
 import { UpdateOrderStatusDto } from './dto/update-orderStatus.dto';
 import { CreateOrderDto } from './dto/create.order';
 import { Payment } from 'src/entity/payment.entity';
 import { paginateResponse, paginateResponseforTotal } from 'src/utils/function/pagination';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
+import { subDays } from 'date-fns';
+
 
 @Injectable()
 export class OrderService {
@@ -26,6 +28,10 @@ export class OrderService {
     private readonly cartItemRepository: Repository<CartItem>,
     @InjectRepository(Payment)
     private readonly paymentRepository: Repository<Payment>,
+    @InjectRepository(Product)
+    private readonly productRepository: Repository<Product>,
+    @InjectRepository(Category)
+    private readonly categoryRepository: Repository<Category>,
   ) { }
 
 
@@ -246,7 +252,6 @@ export class OrderService {
       queryToGetData.andWhere('orderState = :orderState', { orderState });
       queryToGetCount.andWhere('orderState = :orderState', { orderState });
     }
-
     const [query, totalCount] = await Promise.all([
 
       queryToGetData.select([
@@ -429,10 +434,40 @@ export class OrderService {
     };
   }
 
+  async dashboardData() {
+    const totalOrdersQuery = this.orderRepository.count();
+    const completedOrdersQuery = this.orderRepository.count({ where: { orderState: orderByState.completed } });
+    const recentOrdersQuery = this.orderRepository.count({ where: { createdAt: MoreThanOrEqual(subDays(new Date(), 7)) } });
+    const totalProductsQuery = this.productRepository.count();
+    const totalCategoriesQuery = this.categoryRepository.count();
+    const totalCustomersQuery = this.userRepository.count( {where:{role:UserRole.USER}} );
+
+    const [totalOrders, completedOrders, recentOrders, totalProducts, totalCategories, totalCustomers] = await Promise.all([
+        totalOrdersQuery,
+        completedOrdersQuery,
+        recentOrdersQuery,
+        totalProductsQuery,
+        totalCategoriesQuery,
+        totalCustomersQuery
+    ]);
+
+    return {
+        data: {
+            totalOrders,
+            completedOrders,
+            recentOrders,
+            totalProducts,
+            totalCategories,
+            totalCustomers,
+        },
+        message: CONSTANT_RESPONSE.GET_ALL
+    };
+  }
+
 
   getCurrentDateFormatted() {
     const currentDate = new Date();
-    return currentDate.toISOString().slice(0, 10);
+    return currentDate.toISOString()
   }
 
 

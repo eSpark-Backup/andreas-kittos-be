@@ -32,11 +32,12 @@ import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { emailTemplate } from 'src/utils/Static html/resetPassword';
 import { welcomeEmailTemplate } from 'src/utils/Static html/welcomeEmail';
 import { Pagination } from 'nestjs-typeorm-paginate';
-import { paginateResponse } from 'src/utils/function/pagination';
+import { paginateResponse, paginateResponseforUser } from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
 import { ChangePasswordDto } from './dto/change.password.dto';
 import { resendEmailTemplate } from 'src/utils/Static html/resendEmail';
 import { error } from 'console';
+import { Order } from 'src/entity/order.entity';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -52,6 +53,8 @@ export class UserService {
     private jwtService: JwtService,
     @InjectRepository(Users)
     private usersRepo: Repository<Users>,
+    @InjectRepository(Order)
+    private orderRepository: Repository<Order>,
   ) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
@@ -176,10 +179,10 @@ export class UserService {
             message: CONSTANT_RESPONSE.SEND_OTP,
           };
         }
-        else if(!userFind && createUserDto.phoneNumber){
+        else if (!userFind && createUserDto.phoneNumber) {
           throw new NotFoundException('Phone number not found or Verified');
-      }
-    
+        }
+
 
       }
     } catch (error) {
@@ -206,7 +209,7 @@ export class UserService {
       if (!userFind) {
         throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
       }
-      if(userFind.password== null){
+      if (userFind.password == null) {
         throw new NotFoundException('Invalid Login Method');
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
@@ -513,6 +516,9 @@ export class UserService {
 
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
     const findUser = await this.usersRepo.findOne({ where: { id: userId } });
+
+  
+  
     if (!findUser) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
@@ -560,14 +566,19 @@ export class UserService {
         };
       }
     } else {
-      if (findUser.email !== null && findUser.phoneNumber !== null  ) {
-        await this.usersRepo.update(userId, {
+      if (findUser.email !== null && findUser.phoneNumber !== null) {
+       const updatedUser= await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
           phoneNumber: undefined,
         });
 
-        return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: false };
+
+        if (updatedUser.affected === 1) {
+          const user = await this.getUserProfile(userId);
+  
+          return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+        }
       }
       if (findUser.email !== updateUserDto.email && findUser.phoneNumber == updateUserDto.phoneNumber) {
         await this.usersRepo.update(userId, {
@@ -578,23 +589,23 @@ export class UserService {
         const userCheck = await this.usersRepo.findOne({
           where: { email: updateUserDto.email },
         });
-        if(userCheck){
+        if (userCheck) {
           return { message: CONSTANT_RESPONSE.EMAIL_ALREADY_EXSIST, status: false };
         }
-        else{
-        const otphash = await this.generateOtp(
-          updateUserDto.email,
-          async (otp: any) => {
-            const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, findUser.firstName + ' ' + findUser.lastName).replace(/\${otp}/g, otp);
-            await sendEmail(updateUserDto.email, 'Verify Email OTP', modifiedTemplate);
-           
-          },
-        );
-        return {
-          data: { otphash },
-          message: CONSTANT_RESPONSE.RESEND_EMAIL,
-        };
-      }
+        else {
+          const otphash = await this.generateOtp(
+            updateUserDto.email,
+            async (otp: any) => {
+              const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, findUser.firstName + ' ' + findUser.lastName).replace(/\${otp}/g, otp);
+              await sendEmail(updateUserDto.email, 'Verify Email OTP', modifiedTemplate);
+
+            },
+          );
+          return {
+            data: { otphash },
+            message: CONSTANT_RESPONSE.RESEND_EMAIL,
+          };
+        }
       }
       if (findUser.phoneNumber !== updateUserDto.phoneNumber && findUser.email == updateUserDto.email) {
         await this.usersRepo.update(userId, {
@@ -605,12 +616,16 @@ export class UserService {
         const userCheck = await this.usersRepo.findOne({
           where: { phoneNumber: updateUserDto.phoneNumber },
         });
-        if(userCheck){
+        if (userCheck) {
           return { message: CONSTANT_RESPONSE.USER_PHONE_ALREADY_EXSIST, status: false };
         }
-        else{
-        return this.sendOtp(updateUserDto.phoneNumber);
+        else {
+          return this.sendOtp(updateUserDto.phoneNumber);
         }
+      }
+      if(findUser.email !== updateUserDto.email && findUser.phoneNumber !== updateUserDto.phoneNumber){
+        return { message: CONSTANT_RESPONSE.BOTH_NOT_EXSIST, status: false };
+
       }
       else {
         return {
@@ -618,7 +633,7 @@ export class UserService {
           message: CONSTANT_RESPONSE.UPDATE_FAILED,
           status: false,
         };
-        }
+      }
     }
   }
 
@@ -708,7 +723,7 @@ export class UserService {
 
     const skip = (page - 1) * take;
 
-    const [query, totalCount] = await Promise.all([
+    const [query, totalCount, totalOrders] = await Promise.all([
       queryToGetData.select([
         'user.id',
         'user.firstName',
@@ -719,7 +734,7 @@ export class UserService {
         'user.profileImage',
         'user.displayName',
         'user.createdAt',
-        
+
       ])
 
         .limit(take)
@@ -727,11 +742,25 @@ export class UserService {
         .orderBy('user.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
-    ]);
+      this.usersRepo
+  .createQueryBuilder('user')
+  .leftJoin(
+    subQuery =>
+      subQuery
+        .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount']) // Selecting userId, order count, and total amount
+        .from(Order, 'order')
+        .groupBy('order.userId'), // Grouping by userId
+    'orderCounts',
+    'user.id = orderCounts.userId' // Joining on user.id = orderCounts.userId
+  )
+  .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount']) // Selecting user id, order count, and total amount
+  .getRawMany()
+    ]); 
+
 
 
     return {
-      data: paginateResponse({ query, totalCount, take, page }),
+      data: paginateResponseforUser({ query, totalCount, totalOrders, take, page }),
       message: CONSTANT_RESPONSE.RECORD_FOUND,
     }
 

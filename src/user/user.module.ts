@@ -9,10 +9,11 @@ import { JwtStrategy } from './jwt.strategy';
 import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { MulterModule } from '@nestjs/platform-express';
 import * as multer from 'multer';
+import { Order } from 'src/entity/order.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users, Favourite]),
+    TypeOrmModule.forFeature([Users, Favourite,Order]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.TOKEN_KEY || 'andreaskittos',

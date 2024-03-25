@@ -175,4 +175,22 @@ export class OrderController {
     return this.orderService.orderStatusList();
   }
 
+  @Roles('admin')
+  @Get('dashboard')
+  @swaggerDocs({
+    summary: 'Get Dashboard Data',
+    type: null,
+    goodResponse: {
+      status: 200,
+      description: CONSTANT_RESPONSE.GET_ALL,
+    },
+    badresponse: {
+      status: 400,
+      description: CONSTANT_RESPONSE.NOT_EXSIST,
+    },
+  })
+  dashboardData(){
+    return this.orderService.dashboardData();
+  }
+
 }

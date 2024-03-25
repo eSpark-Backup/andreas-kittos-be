@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsOptional,
   IsPhoneNumber,
+  IsNumberString,
 } from 'class-validator';
 
 export class CreateUserDto {
@@ -57,6 +58,7 @@ export class UpdateUserDto {
   readonly email: string;
 
   @ApiProperty({ type: String })
+  @IsNumberString({}, { message: 'Invalid Number format' })
   @IsOptional()
   readonly phoneNumber: string;
 

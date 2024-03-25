@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { OrderController } from './order.controller';
 import { OrderService } from './order.service';
-import { CartItem, Checkout, Users } from 'src/entity';
+import { CartItem, Category, Checkout, Product, Users } from 'src/entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Order } from 'src/entity/order.entity';
 import { JwtService } from '@nestjs/jwt';
@@ -11,7 +11,7 @@ import { Payment } from 'src/entity/payment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Checkout, Order, OrderDetail, Users,CartItem,Payment]),
+    TypeOrmModule.forFeature([Checkout, Order, OrderDetail, Users,CartItem,Payment,Product,Category]),
   ],
 
   controllers: [OrderController],
