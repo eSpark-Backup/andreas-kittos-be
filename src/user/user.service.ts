@@ -747,13 +747,13 @@ export class UserService {
   .leftJoin(
     subQuery =>
       subQuery
-        .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount']) // Selecting userId, order count, and total amount
+        .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount']) 
         .from(Order, 'order')
-        .groupBy('order.userId'), // Grouping by userId
+        .groupBy('order.userId'), 
     'orderCounts',
-    'user.id = orderCounts.userId' // Joining on user.id = orderCounts.userId
+    'user.id = orderCounts.userId' 
   )
-  .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount']) // Selecting user id, order count, and total amount
+  .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount']) 
   .getRawMany()
     ]); 
 
