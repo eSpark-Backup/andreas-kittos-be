@@ -58,9 +58,8 @@ export class UpdateUserDto {
   readonly email: string;
 
   @ApiProperty({ type: String })
-  @IsNumberString({}, { message: 'Invalid Number format' })
   @IsOptional()
-  readonly phoneNumber: string;
+  phoneNumber: string;
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()

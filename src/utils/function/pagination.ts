@@ -34,22 +34,18 @@ export function paginateResponseforUser({ query, totalCount, totalOrders, take, 
   const totalItems = +totalCount;
   const totalPages = Math.ceil(totalItems / take);
 
-  // Merge orderCount into each user object
   const itemsWithOrderCount = query.map(user => {
     const matchingOrder = totalOrders.find(order => order.user_id === user.id);
     const orderCount = matchingOrder && matchingOrder.orderCount !== null ? parseInt(matchingOrder.orderCount, 10) : 0;
+    const totalAmount = matchingOrder && matchingOrder.totalAmount !== null ? parseInt(matchingOrder.totalAmount, 10) : 0;
     
     return {
       ...user,
       orderCount: orderCount,
-      Earnings: matchingOrder.totalAmount
+      earning: totalAmount
     };
   });
   
-  console.log("All users in query:");
-  console.log("Count of users in query:", query.length);
-
-
   const meta: IPaginationMeta = {
     totalItems: totalItems,
     totalPages: totalPages,

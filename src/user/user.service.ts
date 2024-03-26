@@ -98,7 +98,6 @@ export class UserService {
   }
   async signUp(createUserDto: CreateUserDto) {
     createUserDto.displayName = createUserDto.firstName + ' ' + createUserDto.lastName;
-
     try {
       const userFind = await this.usersRepo.findOne({
         where: [
@@ -517,7 +516,9 @@ export class UserService {
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
     const findUser = await this.usersRepo.findOne({ where: { id: userId } });
 
-  
+  if(updateUserDto.phoneNumber == ""){
+    updateUserDto.phoneNumber = undefined;
+  }
   
     if (!findUser) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);

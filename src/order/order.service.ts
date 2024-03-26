@@ -115,7 +115,7 @@ export class OrderService {
       .leftJoinAndSelect('order.payment', 'payment')
       .where('order.id = :orderId', { orderId })
       .getOne();
-    const { scheduled, picked, washing, delivered, orderState,reason } = updateOrderStatusDto;
+    const { scheduled, picked, washing, delivered, orderState, reason } = updateOrderStatusDto;
     if (!order) {
       throw new Error('Order not found');
     }
@@ -192,14 +192,14 @@ export class OrderService {
 
     if (startDate) {
       const startDateObj = new Date(startDate);
-      startDateObj.setHours(0, 0, 0, 0); // Set time to beginning of the day
+      startDateObj.setHours(0, 0, 0, 0); 
       console.log(startDateObj);
       queryToGetData.andWhere('order.createdAt >= :startDate', { startDate: startDateObj });
       queryToGetCount.andWhere('order.createdAt >= :startDate', { startDate: startDateObj });
     }
     if (endDate) {
       const endDateObj = new Date(endDate);
-      endDateObj.setHours(23, 59, 59, 999); // Set time to end of the day
+      endDateObj.setHours(23, 59, 59, 999); 
       console.log(endDateObj);
       queryToGetData.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
       queryToGetCount.andWhere('order.createdAt <= :endDate', { endDate: endDateObj });
@@ -229,7 +229,7 @@ export class OrderService {
         .createQueryBuilder('order')
         .leftJoin('order.user', 'user')
         .select(['user.id', 'COUNT(order.id) as orderCount'])
-        .where('user.id = :userId', { userId: userId }) // Filter by userId
+        .where('user.id = :userId', { userId: userId }) 
         .getRawMany();
 
 
@@ -238,8 +238,8 @@ export class OrderService {
       const completedOrderCount = await this.orderRepository
         .createQueryBuilder('order')
         .leftJoin('order.user', 'user')
-        .where('user.id = :userId', { userId: userId }) // Filter by userId
-        .andWhere('order.orderState = :orderState', { orderState: 'completed' }) // Filter by orderState
+        .where('user.id = :userId', { userId: userId }) 
+        .andWhere('order.orderState = :orderState', { orderState: 'completed' }) 
         .getCount();
 
       userOrderData = {
@@ -440,28 +440,68 @@ export class OrderService {
     const recentOrdersQuery = this.orderRepository.count({ where: { createdAt: MoreThanOrEqual(subDays(new Date(), 7)) } });
     const totalProductsQuery = this.productRepository.count();
     const totalCategoriesQuery = this.categoryRepository.count();
-    const totalCustomersQuery = this.userRepository.count( {where:{role:UserRole.USER}} );
+    const totalCustomersQuery = this.userRepository.count({ where: { role: UserRole.USER } });
 
     const [totalOrders, completedOrders, recentOrders, totalProducts, totalCategories, totalCustomers] = await Promise.all([
-        totalOrdersQuery,
-        completedOrdersQuery,
-        recentOrdersQuery,
-        totalProductsQuery,
-        totalCategoriesQuery,
-        totalCustomersQuery
+      totalOrdersQuery,
+      completedOrdersQuery,
+      recentOrdersQuery,
+      totalProductsQuery,
+      totalCategoriesQuery,
+      totalCustomersQuery,
     ]);
 
     return {
-        data: {
-            totalOrders,
-            completedOrders,
-            recentOrders,
-            totalProducts,
-            totalCategories,
-            totalCustomers,
-        },
-        message: CONSTANT_RESPONSE.GET_ALL
+      data: {
+        totalOrders,
+        completedOrders,
+        recentOrders,
+        totalProducts,
+        totalCategories,
+        totalCustomers,
+       
+      },
+      message: CONSTANT_RESPONSE.GET_ALL
     };
+  }
+
+  async chartData() {
+    const orders = await this.orderRepository.find({ select: ['createdAt', 'total'] });
+
+    const chartData = orders.map(order => {
+      const date = new Date(order.createdAt);
+      const year = date.getFullYear();
+      const month = date.getMonth() + 1; 
+      return {
+        month: `${year}-${month.toString().padStart(2, '0')}`, 
+        total: order.total ,
+        orderCount: 1 
+        
+      };
+    });
+    const groupedData = chartData.reduce((acc, curr) => {
+      if (acc[curr.month]) {
+          acc[curr.month].total += Number(curr.total); 
+          acc[curr.month].orderCount++; 
+      } else {
+          acc[curr.month] = {
+              month: curr.month,
+              total: Number(curr.total), 
+              orderCount: 1 
+          };
+      }
+      return acc;
+  }, {});
+
+    const finalChartData = Object.values(groupedData);
+
+    console.log(finalChartData);
+
+
+    return {
+      data: finalChartData,
+      message: CONSTANT_RESPONSE.GET_ALL
+    }
   }
 
 
@@ -469,6 +509,8 @@ export class OrderService {
     const currentDate = new Date();
     return currentDate.toISOString()
   }
+
+
 
 
 
