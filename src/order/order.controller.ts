@@ -196,7 +196,7 @@ export class OrderController {
   @Roles('admin')
   @Get('chart')
   @swaggerDocs({
-    summary: 'Get Chart Data',
+    summary: 'Get Chart Data for Orders',
     type: null,
     goodResponse: {
       status: 200,
