@@ -62,7 +62,7 @@ export class Order extends BaseEntity {
   @Column({ type: 'varchar' })
   note: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar' ,nullable: true})
   deliveryDate: string;
 
   @Column({ type: 'enum', enum: orderByState, default: orderByState.pending })

@@ -34,6 +34,7 @@ import { updateProfileImageDto } from './dto/update-profileImage.dto';
 import { JwtAuthGuard, RoleGuard } from 'src/utils/guard';
 import { userStatusDto } from './dto/change.userStatus.dto';
 import { ChangePasswordDto } from './dto/change.password.dto';
+import Api from 'twilio/lib/rest/Api';
 
 @Controller('user')
 @ApiTags('User')
@@ -236,6 +237,7 @@ export class UserController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'userStatus', required: false })
+  @ApiQuery({ name: 'customerName', required: false })
   @Get('user-list')
   @swaggerDocs({
     summary: 'Get User List (Admin Access Only)',
@@ -247,10 +249,10 @@ export class UserController {
     badresponse: { status: 400, description: 'Bad Request' },
   })
   
-  async userList(@Query('page') page?: string, @Query('take') take?: string, @Query('userStatus') userStatus?: string){
+  async userList(@Query('page') page?: string, @Query('take') take?: string, @Query('userStatus') userStatus?: string, @Query('customerName') customerName?: string){
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return await this.userService.getUserList(+page, +take,userStatus);
+    return await this.userService.getUserList(+page, +take,userStatus,customerName);
   }
 
   @Roles('user')

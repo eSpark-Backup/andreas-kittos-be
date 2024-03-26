@@ -15,7 +15,7 @@ export function paginateResponse({ query, totalCount, take, page }) {
   return { items: query, meta: meta };
 }
 
-export function paginateResponseforTotal({ query, totalCount, userOrderData, take, page }) {
+export function paginateResponseforTotal({ user,query, totalCount, userOrderData, take, page }) {
   const totalItems = +totalCount;
   const totalPages = Math.ceil(totalItems / take);
 
@@ -27,7 +27,7 @@ export function paginateResponseforTotal({ query, totalCount, userOrderData, tak
     currentPage: page,
   };
 
-  return { items: query, userOrderData, meta: meta };
+  return { items: query,user, userOrderData, meta: meta };
 }
 
 export function paginateResponseforUser({ query, totalCount, totalOrders, take, page }) {

@@ -34,10 +34,10 @@ export class CheckoutDto {
   @IsNotEmpty({ message: 'Note cannot be empty' })
   note: string;
 
-  @ApiProperty({ description: 'Delivery date', example: '2021-12-31' })
-  @IsString({ message: 'Delivery date must be a string' })
-  @IsNotEmpty({ message: 'Delivery date cannot be empty' })
-  deliveryDate: string;
+  // @ApiProperty({ description: 'Delivery date', example: '2021-12-31' })
+  // @IsString({ message: 'Delivery date must be a string' })
+  // @IsNotEmpty({ message: 'Delivery date cannot be empty' })
+  // deliveryDate: string;
 
   @ApiProperty({
     description: 'User ID associated with the checkout',

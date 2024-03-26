@@ -66,7 +66,7 @@ export class OrderService {
     order.orderNumber = orderNumber.toString();
     order.note = checkout.note;
     order.user = user;
-    order.deliveryDate = checkout.deliveryDate;
+    // order.deliveryDate = checkout.deliveryDate;
     order.shippingAddress = extractAddressData(checkout.shippingAddress);
     order.orderStatus = {
       scheduled: true,
@@ -79,7 +79,7 @@ export class OrderService {
       washingDate: '',
       washingReason: '',
       delivered: false,
-      deliveredDate: checkout.deliveryDate,
+      deliveredDate: '',
       deliveredReason: '',
     };
     order.orderDetail = checkout.cart.items.map(cartItem => {
@@ -163,6 +163,8 @@ export class OrderService {
     endDate: string,
     customerName: string) {
     let userOrderData
+    let  user 
+
     const queryToGetData = this.orderRepository.createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
       .leftJoinAndSelect('orderDetail.product', 'product')
@@ -232,7 +234,15 @@ export class OrderService {
         .where('user.id = :userId', { userId: userId }) 
         .getRawMany();
 
+      const findUserByOrder= await this.orderRepository.createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+      .where('user.id = :userId', { userId: userId }).getMany(); 
+      if(findUserByOrder.length == 0){
+         user = await this.userRepository.createQueryBuilder('user')
+        .where('user.id = :userId', { userId: userId })
+        .select(['user.id', 'user.firstName', 'user.lastName', 'user.email', 'user.displayName', 'user.phoneNumber','user.profileImage','user.userStatus','user.createdAt']).getOne();
 
+      }
 
 
       const completedOrderCount = await this.orderRepository
@@ -297,7 +307,7 @@ export class OrderService {
 
 
     return {
-      data: paginateResponseforTotal({ query, totalCount, userOrderData, take, page }),
+      data: paginateResponseforTotal({user, query, totalCount, userOrderData, take, page }),
       message: 'Order list',
     };
   }

@@ -26,7 +26,7 @@ export class CheckoutService {
       cartId,
       deliveryCharges,
       shippingAddressId,
-      deliveryDate,
+      // deliveryDate,
       note,
     } = checkoutDto;
 
@@ -66,7 +66,7 @@ export class CheckoutService {
     checkout.user = user;
     checkout.note = note;
     checkout.deliveryCharges = deliveryCharges;
-    checkout.deliveryDate = deliveryDate;
+    // checkout.deliveryDate = deliveryDate;
 
     const cart = await this.cartRepository.findOne({
       where: { id: cartId },

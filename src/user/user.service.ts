@@ -707,7 +707,7 @@ export class UserService {
     return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
-  async getUserList(page: number, take: number, userStatus: string) {
+  async getUserList(page: number, take: number, userStatus: string,customerName: string) {
     const queryToGetData = this.usersRepo.createQueryBuilder('user')
       .where('user.role = :role', { role: 'user' })
 
@@ -718,8 +718,15 @@ export class UserService {
     if (userStatus !== undefined) {
       queryToGetData.andWhere(`user.userStatus = '${userStatus}'`);
       queryToGetCount.andWhere(`user.userStatus = '${userStatus}'`);
+    }
 
-
+    if(customerName !== undefined){
+      queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )', {
+        customerName: `%${customerName}%`,
+      });
+      queryToGetCount.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )', {
+        customerName: `%${customerName}%`,
+      });
     }
 
     const skip = (page - 1) * take;
@@ -730,6 +737,7 @@ export class UserService {
         'user.firstName',
         'user.lastName',
         'user.email',
+        'user.profileImage',
         'user.userStatus',
         'user.phoneNumber',
         'user.profileImage',
