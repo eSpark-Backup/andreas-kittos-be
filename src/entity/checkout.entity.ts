@@ -31,7 +31,7 @@ export class Checkout extends BaseEntity {
   @Column({ type: 'varchar' })
   note: string;
 
-  @Column({ type: 'varchar' })
+  @Column({ type: 'varchar', nullable: true})
   deliveryDate: string;
 
   @ManyToOne(() => Users, (user) => user.checkouts)
