@@ -23,7 +23,7 @@ export function paginateResponseforTotal({ user,query, totalCount, userOrderData
     totalItems: totalItems,
     totalPages: totalPages,
     itemsPerPage: take,
-    itemCount: Math.min(take, query.length),
+    itemCount: query.length % 10 === 0 ? 10 : query.length % 10,
     currentPage: page,
   };
 
@@ -50,7 +50,7 @@ export function paginateResponseforUser({ query, totalCount, totalOrders, take, 
     totalItems: totalItems,
     totalPages: totalPages,
     itemsPerPage: take,
-    itemCount: Math.min(take, query.length),
+    itemCount: query.length % 10 === 0 ? 10 : query.length % 10,
     currentPage: page,
   };
 
