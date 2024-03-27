@@ -234,15 +234,10 @@ export class OrderService {
         .where('user.id = :userId', { userId: userId }) 
         .getRawMany();
 
-      const findUserByOrder= await this.orderRepository.createQueryBuilder('order')
-      .leftJoinAndSelect('order.user', 'user')
-      .where('user.id = :userId', { userId: userId }).getMany(); 
-      if(findUserByOrder.length == 0){
          user = await this.userRepository.createQueryBuilder('user')
         .where('user.id = :userId', { userId: userId })
         .select(['user.id', 'user.firstName', 'user.lastName', 'user.email', 'user.displayName', 'user.phoneNumber','user.profileImage','user.userStatus','user.createdAt']).getOne();
 
-      }
 
 
       const completedOrderCount = await this.orderRepository
