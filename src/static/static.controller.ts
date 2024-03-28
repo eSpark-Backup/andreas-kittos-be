@@ -19,8 +19,7 @@ import { updateStaticDTO } from './dto/update-static.dto';
 
 @Controller('static')
 @ApiTags('static')
-@ApiBearerAuth('jwt')
-@UseGuards(JwtAuthGuard, RoleGuard)
+
 export class StaticController {
   constructor(private readonly staticService: StaticService) {}
 
@@ -42,7 +41,10 @@ export class StaticController {
       description: CONSTANT_RESPONSE.CREATE_REJECTION,
     },
   })
+  
   @Roles('admin')
+  @ApiBearerAuth('jwt')
+@UseGuards(JwtAuthGuard, RoleGuard)
   @Post()
   async createStaticData(@Body() staticData: StaticDTO) {
     return this.staticService.createStaticData(staticData);
@@ -84,7 +86,6 @@ export class StaticController {
     return this.staticService.deleteStaticData(id);
   }
 
-  @Roles('user')
   @Get()
   async getStaticData() {
     return this.staticService.findAll();
