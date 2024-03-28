@@ -13,8 +13,8 @@ import {
   UpdateUserDto,
 } from './dto/user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Users } from '../entity';
-import { Repository } from 'typeorm';
+import { Address, Cart, CartItem, Checkout, Favourite, Users } from '../entity';
+import { Repository, getConnection } from 'typeorm';
 import { hashPassword, verifyPassword } from '../utils/function/password';
 import { sendEmail } from '../utils/function/sendEmail';
 import { JwtService } from '@nestjs/jwt';
@@ -38,6 +38,8 @@ import { ChangePasswordDto } from './dto/change.password.dto';
 import { resendEmailTemplate } from 'src/utils/Static html/resendEmail';
 import { error } from 'console';
 import { Order } from 'src/entity/order.entity';
+import { OrderDetail } from 'src/entity/orderDetail.entity';
+import { Payment } from 'src/entity/payment.entity';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -55,18 +57,65 @@ export class UserService {
     private usersRepo: Repository<Users>,
     @InjectRepository(Order)
     private orderRepository: Repository<Order>,
+    @InjectRepository(Favourite)
+    private favouriteRepository: Repository<Favourite>,
+    @InjectRepository(Checkout)
+    private checkoutRepository: Repository<Checkout>,
+    @InjectRepository(Address)
+    private addressRepository: Repository<Address>,
+    @InjectRepository(OrderDetail)
+    private orderDetailRepository: Repository<OrderDetail>,
+    @InjectRepository(Cart)
+    private cartRepository: Repository<Cart>,
+    @InjectRepository(Payment)
+    private paymentRepository: Repository<Payment>,
+    @InjectRepository(CartItem)
+    private cartItemRepository: Repository<CartItem>,
   ) {
     sgMail.setApiKey(process.env.SENDGRID_API_KEY);
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
   }
   async deleteUser(userId: string) {
+
+
     const user = await this.usersRepo.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+    if (user) {
+      const orders = await this.orderRepository.createQueryBuilder('order').where('order.userId = :userId', { userId: userId }).getMany();
+      if (orders) {
+        for (const order of orders) {
+        const orderId = order.id;
+
+        this.orderDetailRepository.createQueryBuilder().delete().from(OrderDetail).where("orderId = :orderId", { orderId: orderId }).execute();
+        this.paymentRepository.createQueryBuilder().delete().from(Payment).where("orderId = :orderId", { orderId: orderId }).execute();
+      }
     }
-    await this.usersRepo.delete(userId);
-    return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+      const cart = await this.cartRepository.createQueryBuilder('cart').where('cart.userId = :userId', { userId: userId }).getOne();
+      if (cart) {
+        const cartId = cart.id;
+        this.cartItemRepository.createQueryBuilder().delete().from(CartItem).where("cartId = :cartId", { cartId: cartId }).execute();
+      }
+
+      const userDeleted = await Promise.all([
+        this.cartRepository.createQueryBuilder().delete().from(Cart).where("userId = :userId", { userId: userId }).execute(),
+        this.orderRepository.createQueryBuilder().delete().from(Order).where("userId = :userId", { userId: userId }).execute(),
+        this.checkoutRepository.createQueryBuilder().delete().from(Checkout).where("userId = :userId", { userId: userId }).execute(),
+        this.favouriteRepository.createQueryBuilder().delete().from(Favourite).where("userId = :userId", { userId: userId }).execute(),
+        this.addressRepository.createQueryBuilder().delete().from(Address).where("userId = :userId", { userId: userId }).execute(),
+        this.usersRepo.delete(userId),
+      ]);
+
+
+      if (userDeleted) {
+        return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+      }
+
+    }
+    else {
+      return { message: CONSTANT_RESPONSE.RECORD_NOT_FOUND };
+    }
   }
+
+
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
@@ -516,10 +565,10 @@ export class UserService {
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
     const findUser = await this.usersRepo.findOne({ where: { id: userId } });
 
-  if(updateUserDto.phoneNumber == ""){
-    updateUserDto.phoneNumber = undefined;
-  }
-  
+    if (updateUserDto.phoneNumber == "") {
+      updateUserDto.phoneNumber = undefined;
+    }
+
     if (!findUser) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
@@ -568,7 +617,7 @@ export class UserService {
       }
     } else {
       if (findUser.email !== null && findUser.phoneNumber !== null) {
-       const updatedUser= await this.usersRepo.update(userId, {
+        const updatedUser = await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
           phoneNumber: undefined,
@@ -577,7 +626,7 @@ export class UserService {
 
         if (updatedUser.affected === 1) {
           const user = await this.getUserProfile(userId);
-  
+
           return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
         }
       }
@@ -624,7 +673,7 @@ export class UserService {
           return this.sendOtp(updateUserDto.phoneNumber);
         }
       }
-      if(findUser.email !== updateUserDto.email && findUser.phoneNumber !== updateUserDto.phoneNumber){
+      if (findUser.email !== updateUserDto.email && findUser.phoneNumber !== updateUserDto.phoneNumber) {
         return { message: CONSTANT_RESPONSE.BOTH_NOT_EXSIST, status: false };
 
       }
@@ -707,7 +756,7 @@ export class UserService {
     return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
-  async getUserList(page: number, take: number, userStatus: string,customerName: string) {
+  async getUserList(page: number, take: number, userStatus: string, customerName: string) {
     const queryToGetData = this.usersRepo.createQueryBuilder('user')
       .where('user.role = :role', { role: 'user' })
 
@@ -720,7 +769,7 @@ export class UserService {
       queryToGetCount.andWhere(`user.userStatus = '${userStatus}'`);
     }
 
-    if(customerName !== undefined){
+    if (customerName !== undefined) {
       queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )', {
         customerName: `%${customerName}%`,
       });
@@ -752,19 +801,19 @@ export class UserService {
         .getMany(),
       queryToGetCount.getCount(),
       this.usersRepo
-  .createQueryBuilder('user')
-  .leftJoin(
-    subQuery =>
-      subQuery
-        .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount']) 
-        .from(Order, 'order')
-        .groupBy('order.userId'), 
-    'orderCounts',
-    'user.id = orderCounts.userId' 
-  )
-  .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount']) 
-  .getRawMany()
-    ]); 
+        .createQueryBuilder('user')
+        .leftJoin(
+          subQuery =>
+            subQuery
+              .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount'])
+              .from(Order, 'order')
+              .groupBy('order.userId'),
+          'orderCounts',
+          'user.id = orderCounts.userId'
+        )
+        .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount'])
+        .getRawMany()
+    ]);
 
 
 
