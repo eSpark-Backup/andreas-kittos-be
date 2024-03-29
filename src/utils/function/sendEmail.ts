@@ -9,7 +9,7 @@ export async function sendEmail(
   try {
     const msg = {
       to,
-      from: 'LaundaryApp <ahsansaleem@esparkconsultants.com>',
+      from: 'MPOUGADA<info@mpougadalaundry.com>',
       subject,
       text: content,
       html: content,
