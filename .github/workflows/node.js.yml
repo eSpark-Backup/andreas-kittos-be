@@ -26,6 +26,13 @@ jobs:
         cache: 'npm'
     - run: npm ci
     - run: |
-        touch .env
-        echo "{{ secrets.PROD_ENV_FILE}}" > .env
+        if ! command -v pm2 &> /dev/null
+        then
+            npm install -g pm2
+        fi
+    - run: |
+        touch .env || { echo "Error creating .env file"; exit 1; }
+        echo "${{ secrets.PROD_ENV_FILE }}" > .env || { echo "Error writing to .env file"; exit 1; }
     - run: npm run build --if-present
+    - run: pm2 kill andreaskittos
+    - run: pm2 start ecosystem.config.js
