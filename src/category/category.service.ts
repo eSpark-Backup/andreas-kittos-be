@@ -1,0 +1,72 @@
+import { Injectable } from '@nestjs/common';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Category } from '../entity';
+import { Repository } from 'typeorm';
+import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
+
+@Injectable()
+export class CategoryService {
+  constructor(
+    @InjectRepository(Category)
+    private categoryRepository: Repository<Category>,
+  ) {}
+
+  async create(createCategoryDto: CreateCategoryDto) {
+    const createResult = await this.categoryRepository.save(createCategoryDto);
+    return {
+      data: createResult,
+      message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+    };
+  }
+
+  async findAll() {
+    const allCategoryResult = await this.categoryRepository.find({
+      where: { isParent: '0', isDeleted: false },
+    });
+    return { data: allCategoryResult, message: CONSTANT_RESPONSE.GET_ALL };
+  }
+
+  async findOne(id: string) {
+    const allCategoryResult = await this.categoryRepository.findOne({
+      where: { id: id, isParent: '0', isDeleted: false },
+    });
+    const result = allCategoryResult
+      ? { data: allCategoryResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
+      : {
+          data: allCategoryResult,
+          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+          status: false,
+        };
+    return result;
+  }
+
+  async update(id: string, updateCategoryDto: Partial<CreateCategoryDto>) {
+    const { affected } = await this.categoryRepository.update(
+      id,
+      updateCategoryDto,
+    );
+    if (affected === 1) {
+      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+    }
+    return {
+      data: null,
+      message: CONSTANT_RESPONSE.UPDATE_REJECTION,
+      status: false,
+    };
+  }
+
+  async remove(id: string) {
+    const { affected } = await this.categoryRepository.update(id, {
+      isDeleted: true,
+    });
+    if (affected === 1) {
+      return { data: null, message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
+    }
+    return {
+      data: null,
+      message: CONSTANT_RESPONSE.DELETE_FAILED,
+      status: false,
+    };
+  }
+}
