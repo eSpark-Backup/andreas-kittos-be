@@ -83,22 +83,23 @@ export class UserService {
       const orders = await this.orderRepository.createQueryBuilder('order').where('order.userId = :userId', { userId: userId }).getMany();
       if (orders) {
         for (const order of orders) {
-        const orderId = order.id;
+          const orderId = order.id;
 
-        this.orderDetailRepository.createQueryBuilder().delete().from(OrderDetail).where("orderId = :orderId", { orderId: orderId }).execute();
-        this.paymentRepository.createQueryBuilder().delete().from(Payment).where("orderId = :orderId", { orderId: orderId }).execute();
+          await this.orderDetailRepository.createQueryBuilder().delete().from(OrderDetail).where("orderId = :orderId", { orderId: orderId }).execute();
+          await this.paymentRepository.createQueryBuilder().delete().from(Payment).where("orderId = :orderId", { orderId: orderId }).execute();
+        }
       }
-    }
+      await this.checkoutRepository.createQueryBuilder().delete().from(Checkout).where("userId = :userId", { userId: userId }).execute();
       const cart = await this.cartRepository.createQueryBuilder('cart').where('cart.userId = :userId', { userId: userId }).getOne();
       if (cart) {
         const cartId = cart.id;
-        this.cartItemRepository.createQueryBuilder().delete().from(CartItem).where("cartId = :cartId", { cartId: cartId }).execute();
+        await this.cartItemRepository.createQueryBuilder().delete().from(CartItem).where("cartId = :cartId", { cartId: cartId }).execute();
       }
 
       const userDeleted = await Promise.all([
         this.cartRepository.createQueryBuilder().delete().from(Cart).where("userId = :userId", { userId: userId }).execute(),
         this.orderRepository.createQueryBuilder().delete().from(Order).where("userId = :userId", { userId: userId }).execute(),
-        this.checkoutRepository.createQueryBuilder().delete().from(Checkout).where("userId = :userId", { userId: userId }).execute(),
+
         this.favouriteRepository.createQueryBuilder().delete().from(Favourite).where("userId = :userId", { userId: userId }).execute(),
         this.addressRepository.createQueryBuilder().delete().from(Address).where("userId = :userId", { userId: userId }).execute(),
         this.usersRepo.delete(userId),
