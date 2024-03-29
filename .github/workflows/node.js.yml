@@ -44,11 +44,5 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
     - run: npm ci
-    - run: |
-        echo "APP_SECRET=${{ secrets.APP_SECRETS }}" > .env
-        echo "BACKBLAZE_SECRET=${{ secrets.BACKBLAZE_SECRETS }}" >> .env
-        echo "DATABASE_SECRET=${{ secrets.DATABASE_SECRETS }}" >> .env
-        echo "SENDGRID_SECRET=${{ secrets.SENDGRID_SECRETS }}" >> .env
-        echo "TWILIO_SECRET=${{ secrets.TWILIO_SECRETS }}" >> .env
     - run: npm run build --if-present
     - run: pm2 start ecosystem.config.js
