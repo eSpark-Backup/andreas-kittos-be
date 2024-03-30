@@ -258,8 +258,11 @@ export class UserService {
       if (!userFind) {
         throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
       }
+      if(userFind.firstName == null && userFind.lastName == null && userFind.phoneNumber){
+        throw new NotFoundException(CONSTANT_RESPONSE.INCOMPLETE_SIGNUP);
+      }
       if (userFind.password == null) {
-        throw new NotFoundException('Invalid Login Method');
+        throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
@@ -311,6 +314,7 @@ export class UserService {
       });
       isEmail = false;
     }
+
     if (userFind && isEmail) {
       const otphash = await this.generateOtp(emailPhone, async (otp: any) => {
         const modifiedTemplate = emailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
@@ -321,7 +325,19 @@ export class UserService {
         data: { otphash },
         message: CONSTANT_RESPONSE.RESEND_EMAIL,
       };
-    } else if (userFind && !isEmail) {
+    }
+    else if(userFind && userFind.password == null && !isEmail){
+      const deleteUser = await this.usersRepo.delete(userFind.id);
+      if(deleteUser.affected ===1){
+        return {
+          message: CONSTANT_RESPONSE.INCOMPLETE_SIGNUP,
+          status: false,
+        }
+      }
+    }
+    
+    
+    else if (userFind && !isEmail) {
       const sendOtpViaTwilio = async (otp: string) => {
         await this.twilioClient.messages.create({
           body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
@@ -416,6 +432,13 @@ export class UserService {
     };
 
     if (userFind) {
+      if(userFind.isVerified && userFind.firstName == null  && userFind.lastName == null){
+        const deleteUser = await this.usersRepo.delete(userFind.id);
+        if(deleteUser.affected === 1){
+          const otphash = await this.generateOtp(phone, sendOtpViaTwilio);
+          return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
+        }
+      }
       if (!userFind.isVerified) {
         const otphash = await this.generateOtp(phone, sendOtpViaTwilio);
         return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
