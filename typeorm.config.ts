@@ -3,7 +3,6 @@ import { config } from 'dotenv';
 
 config();
 console.log(process.env);
-
 const port: number = parseInt(<string>process.env.DB_PORT) ;
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'mysql',
