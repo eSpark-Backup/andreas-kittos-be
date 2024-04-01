@@ -15,7 +15,17 @@ import { Payment } from 'src/entity/payment.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Users, Favourite,Order,Checkout,Address,OrderDetail,Payment,CartItem,Cart]),
+    TypeOrmModule.forFeature([
+      Users,
+      Favourite,
+      Order,
+      Checkout,
+      Address,
+      OrderDetail,
+      Payment,
+      CartItem,
+      Cart,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
       secret: process.env.TOKEN_KEY || 'andreaskittos',

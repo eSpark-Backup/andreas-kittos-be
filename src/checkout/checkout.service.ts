@@ -47,7 +47,6 @@ export class CheckoutService {
       checkout = new Checkout();
     }
 
-
     if (!shippingAddressId) {
       const address = await this.addressRepository
         .createQueryBuilder('address')

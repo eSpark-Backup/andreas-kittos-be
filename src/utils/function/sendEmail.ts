@@ -1,5 +1,3 @@
-
-
 import sgMail = require('@sendgrid/mail');
 const email = process.env.SENDGRID_EMAIL;
 
