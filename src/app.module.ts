@@ -14,6 +14,7 @@ import { CartModule } from './cart/cart.module';
 import { AddressModule } from './address/address.module';
 import { CheckoutModule } from './checkout/checkout.module';
 import { OrderModule } from './order/order.module';
+import { BannerModule } from './banner/banner.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { OrderModule } from './order/order.module';
     AddressModule,
     CheckoutModule,
     OrderModule,
+    BannerModule,
   ],
   controllers: [],
   providers: [
