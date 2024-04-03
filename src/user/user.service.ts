@@ -504,7 +504,7 @@ export class UserService {
         user = new Users();
         user.phoneNumber = emailPhone;
         user.isVerified = true;
-        promiseOfCreateAndUpdateUser = this.usersRepo.save(user);
+        promiseOfCreateAndUpdateUser = user;
       }
       const [hashValue, expires] = hash.split('.');
       const now = Date.now();
@@ -517,7 +517,7 @@ export class UserService {
         .update(data)
         .digest('hex');
       if (newCalculateHash === hashValue) {
-        await promiseOfCreateAndUpdateUser;
+        await this.usersRepo.save(promiseOfCreateAndUpdateUser);
         return { message: CONSTANT_RESPONSE.OTP_VARIFIED };
       }
       return { message: CONSTANT_RESPONSE.INVALID_OTP, status: false };

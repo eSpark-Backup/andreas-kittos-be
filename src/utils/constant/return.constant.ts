@@ -33,7 +33,10 @@ export const CONSTANT_RESPONSE = {
   PRODUCT_REMOVED: 'Product removed from favourite successfully',
   UPDATE_FAILED: 'Failed to Update',
   PAYMENT_SUCCESS: 'Payment status updated successfully',
-  USER_PHONE_ALREADY_EXSIST: 'Phone number already associated with another account Please try with another number',
-  EMAIL_ALREADY_EXSIST: 'Email already associated with another account Please try with another email',
-  BOTH_NOT_EXSIST: 'Both email and phone number not associated with this account',
+  USER_PHONE_ALREADY_EXSIST:
+    'Phone number already associated with another account Please try with another number',
+  EMAIL_ALREADY_EXSIST:
+    'Email already associated with another account Please try with another email',
+  BOTH_NOT_EXSIST:
+    'Both email and phone number not associated with this account',
 };
