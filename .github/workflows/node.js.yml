@@ -1,0 +1,50 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on:
+  push:
+    branches: [ "main" ]
+    
+jobs:
+  build:
+
+    runs-on: self-hosted
+
+    strategy:
+      matrix:
+        node-version: [18.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    env:
+        PORT: ${{ secrets.PORT }}
+        TOKEN_KEY: ${{ secrets.TOKEN_KEY }}
+        TOKEN_EXPIRY: ${{ secrets.TOKEN_EXPIRY }}
+        SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+        SENDGRID_EMAIL: ${{ secrets.SENDGRID_EMAIL }}
+        FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+        TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}
+        TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}
+        TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}
+        OTP_TTL: ${{ secrets.OTP_TTL }}
+        OTP_KEY: ${{ secrets.OTP_KEY }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASS: ${{ secrets.DB_PASS }}
+        BACK_BLAZE_KEY_ID: ${{ secrets.BACK_BLAZE_KEY_ID }}
+        BUCKET_NAME: ${{ secrets.BUCKET_NAME }}
+        BACK_BALZE_APP_KEY: ${{ secrets.BACK_BALZE_APP_KEY }}
+        BUCKET_ID: ${{ secrets.BUCKET_ID }}
+        
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    - run: npm ci
+    - run: npm run build --if-present
+    - run: pm2 start ecosystem.config.js
