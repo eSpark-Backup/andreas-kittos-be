@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsOptional, MaxLength } from 'class-validator';
+/* eslint-disable prettier/prettier */
+import { IsNotEmpty, IsString, IsOptional, MaxLength, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -56,6 +57,10 @@ export class CreateProductDto {
   @IsString()
   @MaxLength(255, { message: 'Tags should not exceed 255 characters' })
   tags?: string;
+
+  @ApiProperty( {type: Boolean, default:false,required:false})
+
+  isGeneral: boolean;
 
   @ApiProperty({
     type: 'string',

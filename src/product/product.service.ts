@@ -4,7 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { BackblazeService } from '../backblaze/backblaze.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { Product, Category, CategoryProduct, Favourite } from '../entity';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import * as url from 'url';
@@ -30,12 +30,21 @@ export class ProductService {
   ) { }
 
   async create(file: any, createProductDto: CreateProductDto) {
+
+
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(
       file.fileBuffer,
       file.originalName,
     );
-    const categoryIds = createProductDto.categoryIds;
+
+
+    let categoryIds = createProductDto.categoryIds;
+    if (String(createProductDto.isGeneral) === 'true') {
+      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
+      categoryIds += ',' + generalId.id;
+    }
     delete createProductDto.categoryIds;
+    delete createProductDto.isGeneral;
     createProductDto.productImage = uploadResult.url;
     createProductDto.imageKey = uploadResult.fileId;
     const createProductRes =
@@ -91,6 +100,42 @@ export class ProductService {
         status: false,
       };
     }
+    if (String(updateProductDto.isGeneral) === 'true') {
+      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
+      const category = new Category();
+      category.id = generalId.id
+      const product = new Product();
+      product.id = id;
+      const getProductCategory = await this.productCategoryRepository.findOne({
+        where: { category, product },
+      });
+      if (!getProductCategory) {
+        const categoryProduct = new CategoryProduct();
+        categoryProduct.product = product;
+        categoryProduct.category = category;
+        await this.productCategoryRepository.save(categoryProduct);
+      }
+
+    }
+
+    if (String(updateProductDto.isGeneral) === 'false') {
+      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
+      const category = new Category();
+      category.id = generalId.id;
+      const product = new Product();
+      product.id = id;
+      const getProductCategory = await this.productCategoryRepository.findOne({
+        where: { category, product },
+      });
+      if (getProductCategory) {
+        await this.productCategoryRepository.createQueryBuilder()
+          .delete()
+          .from(CategoryProduct)
+          .where("id = :id", { id: getProductCategory.id })
+          .execute()
+
+      }
+    }
     if (updateProductDto.categoryIds) {
       const category = new Category();
       category.id = updateProductDto.categoryIds;
@@ -100,7 +145,16 @@ export class ProductService {
         where: { category, product },
       });
       if (!getProductCategory) {
-        await this.productCategoryRepository.delete({ product: { id } });
+        const productCategory = await this.productCategoryRepository.find({
+          where: {
+              product: { id: product.id }
+          },
+          relations: ['category']
+      });
+      const filteredCategories = productCategory.filter(category => category.category.name !== 'General');
+      const categoryIdsToDelete = filteredCategories.map(category => category.id);
+      await this.productCategoryRepository.delete(categoryIdsToDelete);
+    
         const categoryProduct = new CategoryProduct();
         categoryProduct.product = product;
         categoryProduct.category = category;
@@ -121,6 +175,7 @@ export class ProductService {
     }
     delete updateProductDto.file;
     delete updateProductDto.categoryIds;
+    delete updateProductDto.isGeneral;
     const { affected } = await this.productRepository.update(
       id,
       updateProductDto,
@@ -182,11 +237,11 @@ export class ProductService {
       const parameterValue = '%' + productName + '%';
       queryToGetData.andWhere('product.name LIKE :productName');
       queryToGetData.setParameter('productName', parameterValue);
-  
+
       queryToGetCount.andWhere('product.name LIKE :productName');
       queryToGetCount.setParameter('productName', parameterValue);
-  }
-  
+    }
+
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
         `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
