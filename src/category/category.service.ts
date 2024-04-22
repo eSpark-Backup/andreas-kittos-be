@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -57,6 +58,24 @@ export class CategoryService {
   }
 
   async remove(id: string) {
+    const findCategory = await this.categoryRepository.findOne({
+      where: { id: id },
+    });
+    if (!findCategory) {
+      return {
+        data: null,
+        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+        status: false,
+      };
+    }
+    if(findCategory.name === 'General'){
+      return {
+        data: null,
+        message: 'Cannot delete General Category',
+        status: false,
+      };
+    }
+
     const { affected } = await this.categoryRepository.update(id, {
       isDeleted: true,
     });
