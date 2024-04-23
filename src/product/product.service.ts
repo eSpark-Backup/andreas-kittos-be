@@ -71,6 +71,12 @@ export class ProductService {
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false')
       .getMany();
+
+      result.forEach(result => {
+        result['isGeneral'] = result.categoryProduct.some(categoryProduct => {
+          return categoryProduct.category.name === 'General';
+        });
+      });
     return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND };
   }
 
