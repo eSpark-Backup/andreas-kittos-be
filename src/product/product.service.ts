@@ -72,11 +72,11 @@ export class ProductService {
       .andWhere('product.isDeleted = false')
       .getMany();
 
-      result.forEach(result => {
-        result['isGeneral'] = result.categoryProduct.some(categoryProduct => {
-          return categoryProduct.category.name === 'General';
-        });
+    result.forEach(result => {
+      result['isGeneral'] = result.categoryProduct.some(categoryProduct => {
+        return categoryProduct.category.name === 'General';
       });
+    });
     return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND };
   }
 
@@ -153,14 +153,14 @@ export class ProductService {
       if (!getProductCategory) {
         const productCategory = await this.productCategoryRepository.find({
           where: {
-              product: { id: product.id }
+            product: { id: product.id }
           },
           relations: ['category']
-      });
-      const filteredCategories = productCategory.filter(category => category.category.name !== 'General');
-      const categoryIdsToDelete = filteredCategories.map(category => category.id);
-      await this.productCategoryRepository.delete(categoryIdsToDelete);
-    
+        });
+        const filteredCategories = productCategory.filter(category => category.category.name !== 'General');
+        const categoryIdsToDelete = filteredCategories.map(category => category.id);
+        await this.productCategoryRepository.delete(categoryIdsToDelete);
+
         const categoryProduct = new CategoryProduct();
         categoryProduct.product = product;
         categoryProduct.category = category;
@@ -248,6 +248,7 @@ export class ProductService {
       queryToGetCount.setParameter('productName', parameterValue);
     }
 
+
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
         `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
@@ -259,7 +260,7 @@ export class ProductService {
 
 
     const skip = (page - 1) * take;
-    const [query, totalCount] = await Promise.all([
+    let [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
           'categoryProduct.id',
@@ -305,13 +306,21 @@ export class ProductService {
       );
     }
 
+
     query.forEach((category) => {
+      if (category.name === 'General' && (categoryId === null || categoryId === undefined) && (productName != null || productName != undefined)) {
+        query = query.filter(category => category.name !== 'General');
+        totalCount = query.length;
+      }
       category.categoryProduct.forEach((categoryProduct) => {
         categoryProduct.product['isFavourite'] = favouriteProductIds.includes(
           categoryProduct.product.id,
         );
       });
     });
+
+
+
 
     return {
       data: paginateResponse({ query, totalCount, take, page }),
