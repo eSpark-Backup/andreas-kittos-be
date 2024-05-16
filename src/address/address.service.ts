@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Address } from 'src/entity/address.entity';
@@ -37,6 +38,60 @@ export class AddressService {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
       throw new Error('User not found');
+    }
+    const findAllAddress = await this.addressRepository
+      .createQueryBuilder('address')
+      .where('address.user = :user', { user: user.id })
+      .getMany();
+    if (findAllAddress) {
+      let matchedAddressId = null;
+      for (const checkaddress of findAllAddress) {
+        if (
+          checkaddress.address.state === address.address.state &&
+          checkaddress.address.country === address.address.country &&
+          checkaddress.address.zipCode === address.address.zipCode &&
+          checkaddress.address.apartment === address.address.apartment &&
+          checkaddress.address.block === address.address.block
+        ) {
+          matchedAddressId = checkaddress.id;
+          break;
+        }
+      }
+      if (matchedAddressId) {
+        address.id = matchedAddressId;
+        address.isDefault = true;
+
+        const ADDRESS = await this.addressRepository.save(address);
+        const allAddresses = await this.addressRepository
+          .createQueryBuilder('address')
+          .select([
+            'address.id AS address_id',
+            'address.type AS address_type',
+            'user.id AS user_id',
+          ])
+          .where('address.user = :user', { user: user.id })
+          .innerJoin('address.user', 'user')
+          .getRawMany();
+
+        for (const addr of allAddresses) {
+          if (
+            addr.address_type === ADDRESS.type &&
+            addr.address_id !== matchedAddressId &&
+            addr.user_id === user.id
+          ) {
+            await this.addressRepository
+              .createQueryBuilder('address')
+              .update(Address)
+              .set({ isDefault: false })
+              .where('id = :id', { id: addr.address_id })
+              .execute();
+          }
+        }
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+        };
+      }
     }
 
     address.user = user;
