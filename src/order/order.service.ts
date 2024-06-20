@@ -131,6 +131,7 @@ export class OrderService {
     if (picked !== undefined) {
       order.orderStatus.picked = picked;
       order.orderStatus.pickedDate = this.getCurrentDateFormatted();
+      order.orderState= orderByState.processing;
       order.orderStatus.pickedReason = reason;
 
     }
@@ -143,6 +144,7 @@ export class OrderService {
     if (delivered !== undefined) {
       order.orderStatus.delivered = delivered;
       order.orderStatus.deliveredDate = this.getCurrentDateFormatted();
+      order.orderState = orderByState.completed;
       order.orderStatus.deliveredReason = reason;
 
     }
