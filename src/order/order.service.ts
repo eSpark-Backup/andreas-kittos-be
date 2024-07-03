@@ -129,10 +129,18 @@ export class OrderService {
       order.orderStatus.scheduledReason = reason;
     }
     if (picked !== undefined) {
-      order.orderStatus.picked = picked;
+      if(picked){
+        order.orderStatus.picked = true;
       order.orderStatus.pickedDate = this.getCurrentDateFormatted();
       order.orderState= orderByState.processing;
       order.orderStatus.pickedReason = reason;
+      }
+      else{
+        order.orderStatus.picked = false;
+      order.orderStatus.pickedDate = this.getCurrentDateFormatted();
+      order.orderState= orderByState.pending;
+      order.orderStatus.pickedReason = reason;
+      }
 
     }
     if (washing !== undefined) {
@@ -142,10 +150,18 @@ export class OrderService {
 
     }
     if (delivered !== undefined) {
-      order.orderStatus.delivered = delivered;
+      if(delivered){
+        order.orderStatus.delivered = true;
       order.orderStatus.deliveredDate = this.getCurrentDateFormatted();
       order.orderState = orderByState.completed;
       order.orderStatus.deliveredReason = reason;
+      }
+      else{
+        order.orderStatus.delivered = false;
+      order.orderStatus.deliveredDate = this.getCurrentDateFormatted();
+      order.orderState = orderByState.processing;
+      order.orderStatus.deliveredReason = reason;
+      }
 
     }
     await this.orderRepository.save(order);
@@ -184,15 +200,22 @@ export class OrderService {
     const skip = (page - 1) * take;
 
     if (customerName) {
-      queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
-        customerName: `%${customerName}%`,
-        orderNumber: `${customerName}`,
-      });
-      queryToGetCount.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName OR order.orderNumber = :orderNumber)', {
-        customerName: `%${customerName}%`,
-        orderNumber: `${customerName}`,
-      });
+      const terms = customerName.trim().split(' ');
+    
+      const whereClauses = terms.map((_, index) => 
+        `(user.firstName LIKE :term${index} OR user.lastName LIKE :term${index} OR user.email LIKE :term${index} OR order.orderNumber = :term${index})`
+      ).join(' AND ');
+    
+      const params = terms.reduce((acc, term, index) => {
+        acc[`term${index}`] = `%${term}%`;
+        return acc;
+      }, {});
+    
+      queryToGetData.andWhere(whereClauses, params);
+      queryToGetCount.andWhere(whereClauses, params);
     }
+    
+    
 
     if (startDate) {
       const startDateObj = new Date(startDate);
