@@ -88,6 +88,7 @@ export class ProductService {
       });
       return {
         message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+        status: true,
       };
     } catch (error) {
       return {
@@ -182,34 +183,6 @@ export class ProductService {
       }
     }
     if (updateProductDto.categoryIds) {
-      const categoryCheck = await this.categoryRepository
-      .createQueryBuilder('category')
-      .where('category.id = :id', { id: updateProductDto.categoryIds })
-      .getOne();
-    if (!categoryCheck) {
-      return {
-        data: null,
-        message: CONSTANT_RESPONSE.NOT_EXSIST,
-        status: false,
-      };
-    }
-    const findsameNameProduct = await this.productRepository
-      .createQueryBuilder('product')
-      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-      .leftJoinAndSelect('categoryProduct.category', 'category')
-      .where(`product.name = '${result.name}'`)
-      .andWhere(`category.id = '${updateProductDto.categoryIds}'`)
-      .andWhere('category.isDeleted = false')
-      .andWhere('product.isDeleted = false')
-      .getOne();
-
-    if (findsameNameProduct) {
-      return {
-        data: null,
-        message: 'Product with same name already exists in this category',
-        status: false,
-      };
-    }
       const category = new Category();
       category.id = updateProductDto.categoryIds;
       const product = new Product();
@@ -250,6 +223,38 @@ export class ProductService {
       updateProductDto.productImage = uploadResult.url;
       updateProductDto.imageKey = uploadResult.fileId;
     }
+    if (updateProductDto.name) {
+      const categoryCheck = await this.categoryRepository
+        .createQueryBuilder('category')
+        .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
+        .leftJoinAndSelect('categoryProduct.product', 'product')
+        .where('product.id = :id', { id: id })
+        .getOne();
+      if (!categoryCheck) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.NOT_EXSIST,
+          status: false,
+        };
+      }
+      const findsameNameProduct = await this.productRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+        .leftJoinAndSelect('categoryProduct.category', 'category')
+        .where(`product.name = '${updateProductDto.name}'`)
+        .andWhere(`category.id = '${categoryCheck.id}'`)
+        .andWhere('category.isDeleted = false')
+        .andWhere('product.isDeleted = false')
+        .getOne();
+
+      if (findsameNameProduct) {
+        return {
+          data: null,
+          message: 'Product with same name already exists in this category',
+          status: false,
+        };
+      }
+    }
     delete updateProductDto.file;
     delete updateProductDto.categoryIds;
     delete updateProductDto.isGeneral;
@@ -258,7 +263,11 @@ export class ProductService {
       updateProductDto,
     );
     if (affected === 1) {
-      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: true};
+      return {
+        data: null,
+        message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+        status: true,
+      };
     }
     return {
       data: null,
@@ -304,10 +313,10 @@ export class ProductService {
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
 
-    if (categoryId != null) {
-      queryToGetData.andWhere(`category.id = '${categoryId}'`);
-      queryToGetCount.andWhere(`category.id = '${categoryId}'`);
-    }
+    // if (categoryId != null) {
+    //   queryToGetData.andWhere(`category.id = '${categoryId}'`);
+    //   queryToGetCount.andWhere(`category.id = '${categoryId}'`);
+    // }
 
     if (productName != null) {
       const parameterValue = '%' + productName + '%';
@@ -342,6 +351,8 @@ export class ProductService {
           'product.tags',
           'product.productImage',
           'product.isDeleted',
+          'product.createdAt',
+          'product.updatedAt',
         ])
         .limit(take)
         .offset(skip)
@@ -389,6 +400,59 @@ export class ProductService {
         );
       });
     });
+
+    query.forEach((category) => {
+      if (category.name === 'General') {
+        category.categoryProduct.forEach((categoryProduct) => {
+          query.forEach((otherCategory) => {
+            if (otherCategory.name !== 'General') {
+              otherCategory.categoryProduct.forEach((otherCategoryProduct) => {
+                if (
+                  otherCategoryProduct.product.id === categoryProduct.product.id
+                ) {
+                  categoryProduct.product['mainCategory'] = otherCategory.name;
+                }
+              });
+            }
+          });
+        });
+      }
+    });
+
+    let filteredCategories = query;
+    if (categoryId != null) {
+      filteredCategories = query.filter(
+        (category) => category.id === categoryId,
+      );
+
+      totalCount = filteredCategories.reduce((count, category) => {
+        return count + category.categoryProduct.length;
+      }, 0);
+
+      const paginatedItems = filteredCategories.flatMap(
+        (category) => category.categoryProduct,
+      );
+
+      const paginatedResponse = paginateResponse({
+        query: paginatedItems,
+        totalCount,
+        take,
+        page,
+      });
+
+      return {
+        status: true,
+        message: CONSTANT_RESPONSE.RECORD_FOUND,
+        data: {
+          items: filteredCategories.map((category) => ({
+            id: category.id,
+            name: category.name,
+            categoryProduct: category.categoryProduct,
+          })),
+          meta: paginatedResponse.meta,
+        },
+      };
+    }
 
     return {
       data: paginateResponse({ query, totalCount, take, page }),

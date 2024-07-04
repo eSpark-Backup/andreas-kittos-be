@@ -31,6 +31,7 @@ export class CategoryService {
     return {
       data: createResult,
       message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+      status: true,
     };
   }
 
@@ -76,7 +77,7 @@ export class CategoryService {
       updateCategoryDto,
     );
     if (affected === 1) {
-      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: true};
     }
     return {
       data: null,

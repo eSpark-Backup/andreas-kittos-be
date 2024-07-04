@@ -63,7 +63,7 @@ export class ProductController {
     if (!createProductResult.status) {
       return res.status(400).json(createProductResult);
     }
-  
+    
     return res.status(201).json(createProductResult);
   }
 
