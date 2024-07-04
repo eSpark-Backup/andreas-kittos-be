@@ -14,6 +14,19 @@ export class CategoryService {
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto) {
+    const checkName = await this.categoryRepository.findOne({
+      where: {
+        name: createCategoryDto.name,
+        isDeleted: false
+      }
+    });
+    if (checkName) {
+      return {
+        data: null,
+        message: "Category already exist with that Name",
+        status: false,
+      };
+    }
     const createResult = await this.categoryRepository.save(createCategoryDto);
     return {
       data: createResult,
@@ -43,6 +56,21 @@ export class CategoryService {
   }
 
   async update(id: string, updateCategoryDto: Partial<CreateCategoryDto>) {
+    const checkName = await this.categoryRepository.findOne({
+      where: {
+        name: updateCategoryDto.name,
+        isDeleted: false
+      }
+    });
+    
+    if (checkName) {
+      return {
+        data: null,
+        message: "Category already exist with that Name",
+        status: false,
+      };
+    }
+
     const { affected } = await this.categoryRepository.update(
       id,
       updateCategoryDto,
