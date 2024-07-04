@@ -27,68 +27,75 @@ export class ProductService {
     private favouriteRepository: Repository<Favourite>,
 
     private cacheService: CacheService,
-  ) { }
+  ) {}
 
   async create(file: any, createProductDto: CreateProductDto) {
-    const category = await this.categoryRepository.createQueryBuilder('category')
-      .where('category.id = :id', { id: createProductDto.categoryIds })
-      .getOne();
-    if (!category) {
+    try {
+      const category = await this.categoryRepository
+        .createQueryBuilder('category')
+        .where('category.id = :id', { id: createProductDto.categoryIds })
+        .getOne();
+      if (!category) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.NOT_EXSIST,
+          status: false,
+        };
+      }
+      const findsameNameProduct = await this.productRepository
+        .createQueryBuilder('product')
+        .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+        .leftJoinAndSelect('categoryProduct.category', 'category')
+        .where(`product.name = '${createProductDto.name}'`)
+        .andWhere(`category.id = '${createProductDto.categoryIds}'`)
+        .andWhere('category.isDeleted = false')
+        .andWhere('product.isDeleted = false')
+        .getOne();
+
+      if (findsameNameProduct) {
+        return {
+          data: null,
+          message: 'Product with same name already exists in this category',
+          status: false,
+        };
+      }
+
+      const uploadResult = await this.backblazeService.uploadFileFromBuffer(
+        file.fileBuffer,
+        file.originalName,
+      );
+
+      let categoryIds = createProductDto.categoryIds;
+      if (String(createProductDto.isGeneral) === 'true') {
+        const generalId = await this.categoryRepository.findOne({
+          where: { name: 'General' },
+        });
+        categoryIds += ',' + generalId.id;
+      }
+      delete createProductDto.categoryIds;
+      delete createProductDto.isGeneral;
+      createProductDto.productImage = uploadResult.url;
+      createProductDto.imageKey = uploadResult.fileId;
+      const createProductRes =
+        await this.productRepository.save(createProductDto);
+      categoryIds.split(',').forEach(async (cId) => {
+        const category = new Category();
+        category.id = cId;
+        const categoryProduct = new CategoryProduct();
+        categoryProduct.product = createProductRes;
+        categoryProduct.category = category;
+        await this.productCategoryRepository.save(categoryProduct);
+      });
+      return {
+        message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
+      };
+    } catch (error) {
       return {
         data: null,
-        message: CONSTANT_RESPONSE.NOT_EXSIST,
+        message: CONSTANT_RESPONSE.CREATE_REJECTION,
         status: false,
       };
     }
-    const findsameNameProduct = await this.productRepository
-    .createQueryBuilder('product')
-    .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-    .leftJoinAndSelect('categoryProduct.category', 'category')
-    .where(`product.name = '${createProductDto.name}'`)
-    .andWhere(`category.id = '${createProductDto.categoryIds}'`)
-    .andWhere('category.isDeleted = false')
-    .andWhere('product.isDeleted = false')
-    .getOne();
-
-    if (findsameNameProduct) {
-      return {
-        data: null,
-        message: "Product with same name already exists in this category",
-        status: false,
-      };
-    }
-
-
-
-
-    const uploadResult = await this.backblazeService.uploadFileFromBuffer(
-      file.fileBuffer,
-      file.originalName,
-    );
-
-
-    let categoryIds = createProductDto.categoryIds;
-    if (String(createProductDto.isGeneral) === 'true') {
-      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
-      categoryIds += ',' + generalId.id;
-    }
-    delete createProductDto.categoryIds;
-    delete createProductDto.isGeneral;
-    createProductDto.productImage = uploadResult.url;
-    createProductDto.imageKey = uploadResult.fileId;
-    const createProductRes =
-      await this.productRepository.save(createProductDto);
-    categoryIds.split(',').forEach(async (cId) => {
-      const category = new Category();
-      category.id = cId;
-      const categoryProduct = new CategoryProduct();
-      categoryProduct.product = createProductRes;
-      categoryProduct.category = category;
-      await this.productCategoryRepository.save(categoryProduct);
-    });
-    return {
-      message: CONSTANT_RESPONSE.CREATED_SUCCESSFULLY,
-    };
   }
 
   async productDetail(productId: string) {
@@ -101,8 +108,8 @@ export class ProductService {
       .andWhere('product.isDeleted = false')
       .getMany();
 
-    result.forEach(result => {
-      result['isGeneral'] = result.categoryProduct.some(categoryProduct => {
+    result.forEach((result) => {
+      result['isGeneral'] = result.categoryProduct.some((categoryProduct) => {
         return categoryProduct.category.name === 'General';
       });
     });
@@ -116,10 +123,10 @@ export class ProductService {
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
-        data: productResult,
-        message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
-        status: false,
-      };
+          data: productResult,
+          message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
+          status: false,
+        };
     return result;
   }
 
@@ -136,9 +143,11 @@ export class ProductService {
       };
     }
     if (String(updateProductDto.isGeneral) === 'true') {
-      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
+      const generalId = await this.categoryRepository.findOne({
+        where: { name: 'General' },
+      });
       const category = new Category();
-      category.id = generalId.id
+      category.id = generalId.id;
       const product = new Product();
       product.id = id;
       const getProductCategory = await this.productCategoryRepository.findOne({
@@ -150,11 +159,12 @@ export class ProductService {
         categoryProduct.category = category;
         await this.productCategoryRepository.save(categoryProduct);
       }
-
     }
 
     if (String(updateProductDto.isGeneral) === 'false') {
-      const generalId = await this.categoryRepository.findOne({ where: { name: 'General' } });
+      const generalId = await this.categoryRepository.findOne({
+        where: { name: 'General' },
+      });
       const category = new Category();
       category.id = generalId.id;
       const product = new Product();
@@ -163,15 +173,43 @@ export class ProductService {
         where: { category, product },
       });
       if (getProductCategory) {
-        await this.productCategoryRepository.createQueryBuilder()
+        await this.productCategoryRepository
+          .createQueryBuilder()
           .delete()
           .from(CategoryProduct)
-          .where("id = :id", { id: getProductCategory.id })
-          .execute()
-
+          .where('id = :id', { id: getProductCategory.id })
+          .execute();
       }
     }
     if (updateProductDto.categoryIds) {
+      const categoryCheck = await this.categoryRepository
+      .createQueryBuilder('category')
+      .where('category.id = :id', { id: updateProductDto.categoryIds })
+      .getOne();
+    if (!categoryCheck) {
+      return {
+        data: null,
+        message: CONSTANT_RESPONSE.NOT_EXSIST,
+        status: false,
+      };
+    }
+    const findsameNameProduct = await this.productRepository
+      .createQueryBuilder('product')
+      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+      .leftJoinAndSelect('categoryProduct.category', 'category')
+      .where(`product.name = '${result.name}'`)
+      .andWhere(`category.id = '${updateProductDto.categoryIds}'`)
+      .andWhere('category.isDeleted = false')
+      .andWhere('product.isDeleted = false')
+      .getOne();
+
+    if (findsameNameProduct) {
+      return {
+        data: null,
+        message: 'Product with same name already exists in this category',
+        status: false,
+      };
+    }
       const category = new Category();
       category.id = updateProductDto.categoryIds;
       const product = new Product();
@@ -182,12 +220,16 @@ export class ProductService {
       if (!getProductCategory) {
         const productCategory = await this.productCategoryRepository.find({
           where: {
-            product: { id: product.id }
+            product: { id: product.id },
           },
-          relations: ['category']
+          relations: ['category'],
         });
-        const filteredCategories = productCategory.filter(category => category.category.name !== 'General');
-        const categoryIdsToDelete = filteredCategories.map(category => category.id);
+        const filteredCategories = productCategory.filter(
+          (category) => category.category.name !== 'General',
+        );
+        const categoryIdsToDelete = filteredCategories.map(
+          (category) => category.id,
+        );
         await this.productCategoryRepository.delete(categoryIdsToDelete);
 
         const categoryProduct = new CategoryProduct();
@@ -216,7 +258,7 @@ export class ProductService {
       updateProductDto,
     );
     if (affected === 1) {
-      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: true};
     }
     return {
       data: null,
@@ -262,7 +304,6 @@ export class ProductService {
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
 
-
     if (categoryId != null) {
       queryToGetData.andWhere(`category.id = '${categoryId}'`);
       queryToGetCount.andWhere(`category.id = '${categoryId}'`);
@@ -277,7 +318,6 @@ export class ProductService {
       queryToGetCount.setParameter('productName', parameterValue);
     }
 
-
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
         `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
@@ -286,7 +326,6 @@ export class ProductService {
         `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
       );
     }
-
 
     const skip = (page - 1) * take;
     let [query, totalCount] = await Promise.all([
@@ -335,10 +374,13 @@ export class ProductService {
       );
     }
 
-
     query.forEach((category) => {
-      if (category.name === 'General' && (categoryId === null || categoryId === undefined) && (productName != null || productName != undefined)) {
-        query = query.filter(category => category.name !== 'General');
+      if (
+        category.name === 'General' &&
+        (categoryId === null || categoryId === undefined) &&
+        (productName != null || productName != undefined)
+      ) {
+        query = query.filter((category) => category.name !== 'General');
         totalCount = query.length;
       }
       category.categoryProduct.forEach((categoryProduct) => {
@@ -347,9 +389,6 @@ export class ProductService {
         );
       });
     });
-
-
-
 
     return {
       data: paginateResponse({ query, totalCount, take, page }),

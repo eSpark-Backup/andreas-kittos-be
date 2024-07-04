@@ -11,6 +11,7 @@ import {
   UploadedFile,
   UseGuards,
   Query,
+  Res,
 } from '@nestjs/common';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -23,6 +24,7 @@ import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { JwtAuthGuard, RoleGuard } from '../utils/guard';
 import { Roles } from 'src/utils/decorator/role.decorator';
 import { UserId } from 'src/utils/decorator/userId.decorator';
+import { Response } from 'express'; 
 
 @Controller('product')
 @ApiTags('product')
@@ -50,13 +52,19 @@ export class ProductController {
   async uploadFile(
     @UploadedFile() file: Multer.File,
     @Body() createProductDto: CreateProductDto,
+    @Res() res: Response,
   ) {
     const createProductResult = await this.productService.create(
       { fileBuffer: file?.buffer, originalName: file?.originalname },
       createProductDto,
     );
     file.buffer = null;
-    return createProductResult;
+
+    if (!createProductResult.status) {
+      return res.status(400).json(createProductResult);
+    }
+  
+    return res.status(201).json(createProductResult);
   }
 
   @Roles('user')
@@ -113,15 +121,21 @@ export class ProductController {
   })
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
-  update(
-    @UploadedFile() file: Multer.File,
+  async update(
+   @UploadedFile() file: Multer.File,
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
+    @Res() res: Response,
+
   ) {
-    return this.productService.update(id, updateProductDto, {
+    const updatedProduct = await this.productService.update(id, updateProductDto, {
       fileBuffer: file?.buffer,
       originalName: file?.originalname || undefined,
     });
+    if (!updatedProduct.status) {
+      return res.status(400).json(updatedProduct);
+    }
+    return res.status(201).json(updatedProduct);
   }
 
   @Roles('admin')

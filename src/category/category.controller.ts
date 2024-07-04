@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import {
   Controller,
   Get,
@@ -7,6 +8,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Res,
 } from '@nestjs/common';
 import { CategoryService } from './category.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -15,7 +17,7 @@ import { swaggerDocs } from '../utils/decorator/swagger.decorator';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, RoleGuard } from '../utils/guard';
 import { Roles } from '../utils/decorator/role.decorator';
-
+import { Response } from 'express';
 @Controller('category')
 @ApiTags('Categories')
 @ApiBearerAuth('jwt')
@@ -37,8 +39,12 @@ export class CategoryController {
     },
   })
   @Roles('admin')
-  create(@Body() createCategoryDto: CreateCategoryDto) {
-    return this.categoryService.create(createCategoryDto);
+  async create(
+    @Body() createCategoryDto: CreateCategoryDto,
+    @Res() res: Response,
+  ) {
+    const createCategory = await this.categoryService.create(createCategoryDto);
+    return res.status(createCategory.status ? 201 : 400).send(createCategory);
   }
 
   @Get()
@@ -83,11 +89,13 @@ export class CategoryController {
     },
   })
   @Roles('admin')
-  update(
+  async update(
     @Param('id') id: string,
     @Body() updateCategoryDto: Partial<CreateCategoryDto>,
+    @Res() res: Response,
   ) {
-    return this.categoryService.update(id, updateCategoryDto);
+    const updateCategory = await  this.categoryService.update(id, updateCategoryDto);
+    return res.status(updateCategory.status ? 201 : 400).send(updateCategory);
   }
 
   @Delete(':id')
