@@ -30,6 +30,35 @@ export class ProductService {
   ) { }
 
   async create(file: any, createProductDto: CreateProductDto) {
+    const category = await this.categoryRepository.createQueryBuilder('category')
+      .where('category.id = :id', { id: createProductDto.categoryIds })
+      .getOne();
+    if (!category) {
+      return {
+        data: null,
+        message: CONSTANT_RESPONSE.NOT_EXSIST,
+        status: false,
+      };
+    }
+    const findsameNameProduct = await this.productRepository
+    .createQueryBuilder('product')
+    .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+    .leftJoinAndSelect('categoryProduct.category', 'category')
+    .where(`product.name = '${createProductDto.name}'`)
+    .andWhere(`category.id = '${createProductDto.categoryIds}'`)
+    .andWhere('category.isDeleted = false')
+    .andWhere('product.isDeleted = false')
+    .getOne();
+
+    if (findsameNameProduct) {
+      return {
+        data: null,
+        message: "Product with same name already exists in this category",
+        status: false,
+      };
+    }
+
+
 
 
     const uploadResult = await this.backblazeService.uploadFileFromBuffer(
