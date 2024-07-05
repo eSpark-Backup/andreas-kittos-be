@@ -4,7 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { BackblazeService } from '../backblaze/backblaze.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
+import { getRepository, Not, Repository } from 'typeorm';
 import { Product, Category, CategoryProduct, Favourite } from '../entity';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import * as url from 'url';
@@ -242,6 +242,7 @@ export class ProductService {
         .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
         .leftJoinAndSelect('categoryProduct.category', 'category')
         .where(`product.name = '${updateProductDto.name}'`)
+        .andWhere('product.id != :id', { id: id })
         .andWhere(`category.id = '${categoryCheck.id}'`)
         .andWhere('category.isDeleted = false')
         .andWhere('product.isDeleted = false')
@@ -303,7 +304,6 @@ export class ProductService {
       .createQueryBuilder('category')
       .leftJoinAndSelect('category.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.product', 'product')
-
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
     const queryToGetCount = this.productCategoryRepository
@@ -313,11 +313,6 @@ export class ProductService {
       .andWhere('category.isDeleted = false')
       .andWhere('product.isDeleted = false');
 
-    // if (categoryId != null) {
-    //   queryToGetData.andWhere(`category.id = '${categoryId}'`);
-    //   queryToGetCount.andWhere(`category.id = '${categoryId}'`);
-    // }
-
     if (productName != null) {
       const parameterValue = '%' + productName + '%';
       queryToGetData.andWhere('product.name LIKE :productName');
@@ -325,6 +320,10 @@ export class ProductService {
 
       queryToGetCount.andWhere('product.name LIKE :productName');
       queryToGetCount.setParameter('productName', parameterValue);
+    }
+    if (categoryId != null) {
+      queryToGetData.andWhere(`category.id = '${categoryId}'`);
+      queryToGetCount.andWhere(`category.id = '${categoryId}'`);
     }
 
     if (maxPrice != null && minPrice != null) {
@@ -337,6 +336,7 @@ export class ProductService {
     }
 
     const skip = (page - 1) * take;
+
     let [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
@@ -360,7 +360,6 @@ export class ProductService {
         .getMany(),
       queryToGetCount.getCount(),
     ]);
-
     const cachedData = await this.cacheService.get<string[]>(
       `favouriteProductIds_${userId}`,
     );
@@ -377,14 +376,12 @@ export class ProductService {
             .where('favourite.userId = :userId', { userId })
             .getRawMany()
         ).map((favourite) => favourite.productId);
-
       await this.cacheService.setWithExpiration(
         `favouriteProductIds_${userId}`,
         favouriteProductIds,
         300,
       );
     }
-
     query.forEach((category) => {
       if (
         category.name === 'General' &&
@@ -401,11 +398,17 @@ export class ProductService {
       });
     });
 
-    query.forEach((category) => {
-      if (category.name === 'General') {
-        category.categoryProduct.forEach((categoryProduct) => {
-          query.forEach((otherCategory) => {
-            if (otherCategory.name !== 'General') {
+    if (categoryId != null || categoryId != undefined) {
+
+      const otherCategories = await this.categoryRepository.find({
+        where: { name: Not('General') },
+        relations: ['categoryProduct', 'categoryProduct.product'],
+      });
+
+      query.forEach((category) => {
+        if (category.name === 'General') {
+          category.categoryProduct.forEach((categoryProduct) => {
+            otherCategories.forEach((otherCategory) => {
               otherCategory.categoryProduct.forEach((otherCategoryProduct) => {
                 if (
                   otherCategoryProduct.product.id === categoryProduct.product.id
@@ -413,50 +416,37 @@ export class ProductService {
                   categoryProduct.product['mainCategory'] = otherCategory.name;
                 }
               });
-            }
+            });
           });
-        });
-      }
-    });
+        }
+      });
+    }
 
-    let filteredCategories = query;
-    if (categoryId != null) {
-      filteredCategories = query.filter(
-        (category) => category.id === categoryId,
-      );
-
-      totalCount = filteredCategories.reduce((count, category) => {
-        return count + category.categoryProduct.length;
-      }, 0);
-
-      const paginatedItems = filteredCategories.flatMap(
-        (category) => category.categoryProduct,
-      );
-
-      const paginatedResponse = paginateResponse({
-        query: paginatedItems,
-        totalCount,
-        take,
-        page,
+      query.forEach((category) => {
+        if (category.name === 'General') {
+          category.categoryProduct.forEach((categoryProduct) => {
+            query.forEach((otherCategory) => {
+              if (otherCategory.name !== 'General') {
+                otherCategory.categoryProduct.forEach(
+                  (otherCategoryProduct) => {
+                    if (
+                      otherCategoryProduct.product.id ===
+                      categoryProduct.product.id
+                    ) {
+                      categoryProduct.product['mainCategory'] =
+                        otherCategory.name;
+                    }
+                  },
+                );
+              }
+            });
+          });
+        }
       });
 
       return {
-        status: true,
+        data: paginateResponse({ query, totalCount, take, page }),
         message: CONSTANT_RESPONSE.RECORD_FOUND,
-        data: {
-          items: filteredCategories.map((category) => ({
-            id: category.id,
-            name: category.name,
-            categoryProduct: category.categoryProduct,
-          })),
-          meta: paginatedResponse.meta,
-        },
       };
-    }
-
-    return {
-      data: paginateResponse({ query, totalCount, take, page }),
-      message: CONSTANT_RESPONSE.RECORD_FOUND,
-    };
   }
 }
