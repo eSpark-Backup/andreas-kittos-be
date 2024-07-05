@@ -17,13 +17,13 @@ export class CategoryService {
     const checkName = await this.categoryRepository.findOne({
       where: {
         name: createCategoryDto.name,
-        isDeleted: false
-      }
+        isDeleted: false,
+      },
     });
     if (checkName) {
       return {
         data: null,
-        message: "Category already exist with that Name",
+        message: 'Category already exist with that Name',
         status: false,
       };
     }
@@ -57,17 +57,17 @@ export class CategoryService {
   }
 
   async update(id: string, updateCategoryDto: Partial<CreateCategoryDto>) {
-    const checkName = await this.categoryRepository.findOne({
-      where: {
-        name: updateCategoryDto.name,
-        isDeleted: false
-      }
-    });
-    
+    const checkName = await this.categoryRepository
+      .createQueryBuilder('category')
+      .where('category.name = :name', { name: updateCategoryDto.name })
+      .andWhere('category.isDeleted = :isDeleted', { isDeleted: false })
+      .andWhere('category.id != :id', { id })
+      .getOne();
+
     if (checkName) {
       return {
         data: null,
-        message: "Category already exist with that Name",
+        message: 'Category already exist with that Name',
         status: false,
       };
     }
@@ -77,7 +77,11 @@ export class CategoryService {
       updateCategoryDto,
     );
     if (affected === 1) {
-      return { data: null, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY, status: true};
+      return {
+        data: null,
+        message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+        status: true,
+      };
     }
     return {
       data: null,
@@ -97,7 +101,7 @@ export class CategoryService {
         status: false,
       };
     }
-    if(findCategory.name === 'General'){
+    if (findCategory.name === 'General') {
       return {
         data: null,
         message: 'Cannot delete General Category',
