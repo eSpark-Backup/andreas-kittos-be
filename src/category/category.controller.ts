@@ -20,11 +20,11 @@ import { Roles } from '../utils/decorator/role.decorator';
 import { Response } from 'express';
 @Controller('category')
 @ApiTags('Categories')
-@ApiBearerAuth('jwt')
-@UseGuards(JwtAuthGuard, RoleGuard)
 export class CategoryController {
   constructor(private readonly categoryService: CategoryService) {}
 
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Post()
   @swaggerDocs({
     summary: 'create category',
@@ -57,7 +57,6 @@ export class CategoryController {
       description: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
     },
   })
-  @Roles('user')
   findAll() {
     return this.categoryService.findAll();
   }
@@ -74,7 +73,8 @@ export class CategoryController {
   findOne(@Param('id') id: string) {
     return this.categoryService.findOne(id);
   }
-
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Patch(':id')
   @swaggerDocs({
     summary: 'update category',
@@ -94,10 +94,14 @@ export class CategoryController {
     @Body() updateCategoryDto: Partial<CreateCategoryDto>,
     @Res() res: Response,
   ) {
-    const updateCategory = await  this.categoryService.update(id, updateCategoryDto);
+    const updateCategory = await this.categoryService.update(
+      id,
+      updateCategoryDto,
+    );
     return res.status(updateCategory.status ? 201 : 400).send(updateCategory);
   }
-
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Delete(':id')
   @Roles('admin')
   @swaggerDocs({
