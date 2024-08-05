@@ -1,0 +1,34 @@
+services:
+  mls_api:
+    build:
+      # secrets:
+      #   - DOCKER_EXPOSED_PORT
+      #   - DOCKER_APPLICATION_PORT
+      context: .
+      dockerfile: Dockerfile
+    ports:
+     - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
+    environment:
+      - NODE_ENV=production
+#      - SECRET_KEY_FILE= /run/secrets/secret_key
+
+
+  mls_db:
+    image: mysql:latest
+    ports:
+      - ${MYSQL_DB_PORT}
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_DB_HOST=${MYSQL_DB_HOST}
+      - MYSQL_DB_USERNAME=${MYSQL_DB_USERNAME}
+      - MYSQL_DB_PASS=${MYSQL_DB_PASS}
+      - MYSQL_DB_PORT=${MYSQL_DB_PORT}
+
+
+
+# secrets:
+#   DOCKER_EXPOSED_PORT:
+#     environment: DOCKER_EXPOSED_PORT
+#   DOCKER_APPLICATION_PORT:
+#     environment: DOCKER_APPLICATION_PORT
