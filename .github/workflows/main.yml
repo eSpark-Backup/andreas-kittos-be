@@ -153,24 +153,26 @@ jobs:
       run: |
         touch .env
         echo "PORT=${{ secrets.PORT }}" >> .env
-        echo "TOKEN_KEY: ${{ secrets.TOKEN_KEY }}" >> .env
-        echo "TOKEN_EXPIRY: ${{ secrets.TOKEN_EXPIRY }}" >> .env
-        echo "SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}" >> .env
-        echo "SENDGRID_EMAIL: ${{ secrets.SENDGRID_EMAIL }}" >> .env
-        echo "FRONTEND_URL: ${{ secrets.FRONTEND_URL }}" >> .env
-        echo "TWILIO_ACCOUNT_SID: ${{ secrets.TWILIO_ACCOUNT_SID }}" >> .env
-        echo "TWILIO_AUTH_TOKEN: ${{ secrets.TWILIO_AUTH_TOKEN }}" >> .env
-        echo "TWILIO_PHONE_NUMBER: ${{ secrets.TWILIO_PHONE_NUMBER }}" >> .env
-        echo "OTP_TTL: ${{ secrets.OTP_TTL }}" >> .env
-        echo "OTP_KEY: ${{ secrets.OTP_KEY }}" >> .env
-        echo "DB_HOST: ${{ secrets.DB_HOST }}" >> .env
-        echo "DB_PORT: ${{ secrets.DB_PORT }}" >> .env
-        echo "DB_USERNAME: ${{ secrets.DB_USERNAME }}" >> .env
-        echo "DB_PASS: ${{ secrets.DB_PASS }}" >> .env
-        echo "BACK_BLAZE_KEY_ID: ${{ secrets.BACK_BLAZE_KEY_ID }}" >> .env
-        echo "BUCKET_NAME: ${{ secrets.BUCKET_NAME }}" >> .env
-        echo "BACK_BALZE_APP_KEY: ${{ secrets.BACK_BALZE_APP_KEY }}" >> .env
-        echo "BUCKET_ID: ${{ secrets.BUCKET_ID }}" >> .env
+        echo "TOKEN_KEY=${{ secrets.TOKEN_KEY }}" >> .env
+        echo "TOKEN_EXPIRY=${{ secrets.TOKEN_EXPIRY }}" >> .env
+        echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env
+        echo "SENDGRID_EMAIL=${{ secrets.SENDGRID_EMAIL }}" >> .env
+        echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
+        echo "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}" >> .env
+        echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}" >> .env
+        echo "TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}" >> .env
+        echo "OTP_TTL=${{ secrets.OTP_TTL }}" >> .env
+        echo "OTP_KEY=${{ secrets.OTP_KEY }}" >> .env
+        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+        echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+        echo "BACK_BLAZE_KEY_ID=${{ secrets.BACK_BLAZE_KEY_ID }}" >> .env
+        echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
+        echo "BACK_BALZE_APP_KEY=${{ secrets.BACK_BALZE_APP_KEY }}" >> .env
+        echo "BUCKET_ID=${{ secrets.BUCKET_ID }}" >> .env
+        echo "DOCKER_EXPOSED_PORT=${{ secrets.DOCKER_EXPOSED_PORT }}" >> .env
+        echo "DOCKER_APPLICATION_PORT=${{ secrets.DOCKER_APPLICATION_PORT }}" >> .env
         
 
     - name: Build, tag, and push image to Amazon ECR

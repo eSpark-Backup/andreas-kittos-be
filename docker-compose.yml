@@ -1,8 +1,28 @@
 services:
   mls_api:
     image: "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
-    env_file:
-      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT
+      - TOKEN_KEY
+      - TOKEN_EXPIRY
+      - SENDGRID_API_KEY
+      - SENDGRID_EMAIL
+      - FRONTEND_URL
+      - TWILIO_ACCOUNT_SID
+      - TWILIO_AUTH_TOKEN
+      - TWILIO_PHONE_NUMBER
+      - OTP_TTL
+      - OTP_KEY
+      - DB_HOST
+      - DB_PORT
+      - DB_USERNAME
+      - DB_PASS
+      - BACK_BLAZE_KEY_ID
+      - BUCKET_NAME
+      - BACK_BALZE_APP_KEY
+      - BUCKET_ID
+#      - SECRET_KEY_FILE= /run/secrets/secret_key
     build:
       # secrets:
       #   - DOCKER_EXPOSED_PORT
@@ -11,9 +31,7 @@ services:
       dockerfile: Dockerfile
     ports:
      - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
-    environment:
-      - NODE_ENV=production
-#      - SECRET_KEY_FILE= /run/secrets/secret_key
+
 
 
   mls_db:
