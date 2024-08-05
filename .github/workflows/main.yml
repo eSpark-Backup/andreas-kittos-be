@@ -204,4 +204,4 @@ jobs:
         docker compose pull
         docker compose stop || true
         docker compose rm || true
-        docker copmose up -d
+        docker compose up -d
