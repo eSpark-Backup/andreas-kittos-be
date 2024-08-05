@@ -163,10 +163,12 @@ jobs:
         echo "TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}" >> .env
         echo "OTP_TTL=${{ secrets.OTP_TTL }}" >> .env
         echo "OTP_KEY=${{ secrets.OTP_KEY }}" >> .env
-        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
-        echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+        echo "MYSQL_DB_HOST=${{ secrets.MYSQL_DB_HOST }}" >> .env
+        echo "MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}" >> .env
+        echo "MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}" >> .env
+        echo "MYSQL_DB_PORT=${{ secrets.MYSQL_DB_PORT }}" >> .env
+        echo "MYSQL_DB_USERNAME=${{ secrets.MYSQL_DB_USERNAME }}" >> .env
+        echo "MYSQL_DB_PASS=${{ secrets.MYSQL_DB_PASS }}" >> .env
         echo "BACK_BLAZE_KEY_ID=${{ secrets.BACK_BLAZE_KEY_ID }}" >> .env
         echo "BUCKET_NAME=${{ secrets.BUCKET_NAME }}" >> .env
         echo "BACK_BALZE_APP_KEY=${{ secrets.BACK_BALZE_APP_KEY }}" >> .env
