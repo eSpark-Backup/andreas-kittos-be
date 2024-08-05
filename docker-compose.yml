@@ -22,8 +22,6 @@ services:
       - BUCKET_NAME
       - BACK_BALZE_APP_KEY
       - BUCKET_ID
-    env_file:
-      - ./.env
 #      - SECRET_KEY_FILE= /run/secrets/secret_key
     build:
       # secrets:
