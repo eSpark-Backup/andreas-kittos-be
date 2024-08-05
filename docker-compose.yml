@@ -22,11 +22,7 @@ services:
       - BUCKET_NAME
       - BACK_BALZE_APP_KEY
       - BUCKET_ID
-#      - SECRET_KEY_FILE= /run/secrets/secret_key
     build:
-      # secrets:
-      #   - DOCKER_EXPOSED_PORT
-      #   - DOCKER_APPLICATION_PORT
       context: .
       dockerfile: Dockerfile
     ports:
@@ -45,11 +41,3 @@ services:
       - MYSQL_DB_USERNAME=${MYSQL_DB_USERNAME}
       - MYSQL_DB_PASS=${MYSQL_DB_PASS}
       - MYSQL_DB_PORT=${MYSQL_DB_PORT}
-
-
-
-# secrets:
-#   DOCKER_EXPOSED_PORT:
-#     environment: DOCKER_EXPOSED_PORT
-#   DOCKER_APPLICATION_PORT:
-#     environment: DOCKER_APPLICATION_PORT
