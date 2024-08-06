@@ -1,5 +1,6 @@
 services:
   mls_api:
+    container_name: mls_api
     image: "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
     environment:
       - NODE_ENV=production
@@ -14,10 +15,11 @@ services:
       - TWILIO_PHONE_NUMBER
       - OTP_TTL
       - OTP_KEY
-      - DB_HOST
-      - DB_PORT
-      - DB_USERNAME
-      - DB_PASS
+      - MYSQL_HOST
+      - MYSQL_DATABASE
+      - MYSQL_PORT
+      - MYSQL_USER
+      - MYSQL_PASSWORD
       - BACK_BLAZE_KEY_ID
       - BUCKET_NAME
       - BACK_BALZE_APP_KEY
@@ -27,17 +29,16 @@ services:
       dockerfile: Dockerfile
     ports:
      - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
-
-
+  
 
   mls_db:
+    container_name: mls_db
     image: mysql:latest
     ports:
-      - ${MYSQL_DB_PORT}
+      - ${MYSQL_PORT}
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
-      - MYSQL_DB_HOST=${MYSQL_DB_HOST}
-      - MYSQL_DB_USERNAME=${MYSQL_DB_USERNAME}
-      - MYSQL_DB_PASS=${MYSQL_DB_PASS}
-      - MYSQL_DB_PORT=${MYSQL_DB_PORT}
+      - MYSQL_HOST=localhost
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
