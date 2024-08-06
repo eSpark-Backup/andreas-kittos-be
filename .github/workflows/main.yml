@@ -205,6 +205,7 @@ jobs:
       
       run: |
         docker compose pull
-        docker compose stop || true
-        docker compose rm || true
+        # docker compose stop || true
+        # docker compose rm || true
+        docker compose down -v
         docker compose up -d
