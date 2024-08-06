@@ -28,7 +28,9 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-     - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
+      - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
+    links:
+      - mls_db
   
 
 
