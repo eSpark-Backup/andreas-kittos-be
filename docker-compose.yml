@@ -44,4 +44,4 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
-      - /home/ubuntu/mls_backup.sql:/mls_backup.sql
+      - /home/ubuntu/mls_backup.sql:/var/lib/mls_backup.sql
