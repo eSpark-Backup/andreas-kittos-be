@@ -4,13 +4,13 @@ import { config } from 'dotenv';
 
 config();
 console.log(process.env);
-const port: number = parseInt(<string>process.env.MYSQL_DB_PORT);
+const port: number = parseInt(<string>process.env.MYSQL_PORT);
 export const typeOrmConfig: TypeOrmModuleOptions = {
   type: 'mysql',
-  host: process.env.MYSQL_DB_HOST,
+  host: process.env.MYSQL_HOST,
   port: port,
-  username: process.env.MYSQL_DB_USERNAME,
-  password: process.env.MYSQL_DB_PASS,
+  username: process.env.MYSQL_USER,
+  password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE,
   entities: [__dirname + '/src/entity/*.entity.{js,ts}'],
   migrations: [__dirname + '/src/migrations/*.{js,ts}'],
