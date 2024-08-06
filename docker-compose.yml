@@ -29,8 +29,6 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
-    links:
-      - mls_db
   
 
 
@@ -38,7 +36,7 @@ services:
     container_name: mls_db
     image: mysql:latest
     ports:
-      - "${MYSQL_PORT}:3306"
+      - "${MYSQL_PORT}"
     environment:
       - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
       - MYSQL_DATABASE=${MYSQL_DATABASE}
