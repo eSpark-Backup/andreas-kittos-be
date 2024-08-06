@@ -146,6 +146,9 @@ jobs:
 
     steps:
 
+    - name: Checkout source repository
+      uses: actions/checkout@v4
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
@@ -201,7 +204,7 @@ jobs:
         DOCKER_APPLICATION_PORT: ${{ secrets.DOCKER_APPLICATION_PORT }}
       
       run: |
-        docker pull "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+        docker compose pull
         docker compose stop || true
         docker compose rm || true
         docker compose up -d
