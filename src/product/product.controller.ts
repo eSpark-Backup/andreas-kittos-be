@@ -24,14 +24,12 @@ import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
 import { JwtAuthGuard, RoleGuard } from '../utils/guard';
 import { Roles } from 'src/utils/decorator/role.decorator';
 import { UserId } from 'src/utils/decorator/userId.decorator';
-import { Response } from 'express'; 
+import { Response } from 'express';
 
 @Controller('product')
 @ApiTags('product')
-@ApiBearerAuth('jwt')
-@UseGuards(JwtAuthGuard, RoleGuard)
 export class ProductController {
-  constructor(private readonly productService: ProductService) { }
+  constructor(private readonly productService: ProductService) {}
 
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
@@ -46,6 +44,8 @@ export class ProductController {
       description: CONSTANT_RESPONSE.CREATE_REJECTION,
     },
   })
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Roles('admin')
   @Post()
   @UseInterceptors(FileInterceptor('file'))
@@ -63,17 +63,14 @@ export class ProductController {
     if (!createProductResult.status) {
       return res.status(400).json(createProductResult);
     }
-    
+
     return res.status(201).json(createProductResult);
   }
-
-  @Roles('user')
   @Get('product-detail/:productId')
   productDetail(@Param('productId') productId: string) {
     return this.productService.productDetail(productId);
   }
 
-  @Roles('user')
   @Get()
   @ApiQuery({ name: 'categoryId', required: false })
   @ApiQuery({ name: 'page', required: false })
@@ -105,6 +102,8 @@ export class ProductController {
     );
   }
 
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Roles('admin')
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
@@ -122,22 +121,27 @@ export class ProductController {
   @Patch(':id')
   @UseInterceptors(FileInterceptor('file'))
   async update(
-   @UploadedFile() file: Multer.File,
+    @UploadedFile() file: Multer.File,
     @Param('id') id: string,
     @Body() updateProductDto: UpdateProductDto,
     @Res() res: Response,
-
   ) {
-    const updatedProduct = await this.productService.update(id, updateProductDto, {
-      fileBuffer: file?.buffer,
-      originalName: file?.originalname || undefined,
-    });
+    const updatedProduct = await this.productService.update(
+      id,
+      updateProductDto,
+      {
+        fileBuffer: file?.buffer,
+        originalName: file?.originalname || undefined,
+      },
+    );
     if (!updatedProduct.status) {
       return res.status(400).json(updatedProduct);
     }
     return res.status(201).json(updatedProduct);
   }
 
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
   @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
