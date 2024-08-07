@@ -44,4 +44,12 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
-      - ./database_dump:/docker-entrypoint-initdb.d
+      - db_data:/docker-entrypoint-initdb.d
+
+volumes:
+  mls_db:
+    driver: local
+    driver_opts:
+      type: none
+      device: /data/db_data
+      o: bind
