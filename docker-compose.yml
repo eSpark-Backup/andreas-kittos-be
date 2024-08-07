@@ -44,4 +44,4 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
-      - /home/ubuntu:/docker-entrypoint-initdb.d
+      - ./database_dump:/docker-entrypoint-initdb.d
