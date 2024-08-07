@@ -44,7 +44,7 @@ services:
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
-      - db_data:/docker-entrypoint-initdb.d
+      - mls_db:/docker-entrypoint-initdb.d
 
 volumes:
   mls_db:
