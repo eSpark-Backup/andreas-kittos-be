@@ -45,3 +45,6 @@ services:
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
       - mls_database:/var/lib/mysql
+
+volumes:
+  mls_database:
