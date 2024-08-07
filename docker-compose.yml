@@ -43,3 +43,5 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
+    volumes:
+      - mls_database:/var/lib/mysql
