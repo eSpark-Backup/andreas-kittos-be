@@ -45,11 +45,3 @@ services:
       - MYSQL_TCP_PORT=${MYSQL_PORT}
     volumes:
       - mls_db:/docker-entrypoint-initdb.d
-
-volumes:
-  mls_db:
-    driver: local
-    driver_opts:
-      type: none
-      device: /data/db_data
-      o: bind
