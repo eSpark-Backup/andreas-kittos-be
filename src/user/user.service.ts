@@ -32,7 +32,10 @@ import { BackblazeService } from 'src/backblaze/backblaze.service';
 import { emailTemplate } from 'src/utils/Static html/resetPassword';
 import { welcomeEmailTemplate } from 'src/utils/Static html/welcomeEmail';
 import { Pagination } from 'nestjs-typeorm-paginate';
-import { paginateResponse, paginateResponseforUser } from 'src/utils/function/pagination';
+import {
+  paginateResponse,
+  paginateResponseforUser,
+} from 'src/utils/function/pagination';
 import { userStatusDto } from './dto/change.userStatus.dto';
 import { ChangePasswordDto } from './dto/change.password.dto';
 import { resendEmailTemplate } from 'src/utils/Static html/resendEmail';
@@ -76,57 +79,101 @@ export class UserService {
     this.twilioClient = Twilio(twilioAccountSid, twilioAuthToken);
   }
   async deleteUser(userId: string) {
-
-
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (user) {
-      const orders = await this.orderRepository.createQueryBuilder('order').where('order.userId = :userId', { userId: userId }).getMany();
+      const orders = await this.orderRepository
+        .createQueryBuilder('order')
+        .where('order.userId = :userId', { userId: userId })
+        .getMany();
       if (orders) {
         for (const order of orders) {
           const orderId = order.id;
 
-          await this.orderDetailRepository.createQueryBuilder().delete().from(OrderDetail).where("orderId = :orderId", { orderId: orderId }).execute();
-          await this.paymentRepository.createQueryBuilder().delete().from(Payment).where("orderId = :orderId", { orderId: orderId }).execute();
+          await this.orderDetailRepository
+            .createQueryBuilder()
+            .delete()
+            .from(OrderDetail)
+            .where('orderId = :orderId', { orderId: orderId })
+            .execute();
+          await this.paymentRepository
+            .createQueryBuilder()
+            .delete()
+            .from(Payment)
+            .where('orderId = :orderId', { orderId: orderId })
+            .execute();
         }
       }
-      await this.checkoutRepository.createQueryBuilder().delete().from(Checkout).where("userId = :userId", { userId: userId }).execute();
-      const cart = await this.cartRepository.createQueryBuilder('cart').where('cart.userId = :userId', { userId: userId }).getOne();
+      await this.checkoutRepository
+        .createQueryBuilder()
+        .delete()
+        .from(Checkout)
+        .where('userId = :userId', { userId: userId })
+        .execute();
+      const cart = await this.cartRepository
+        .createQueryBuilder('cart')
+        .where('cart.userId = :userId', { userId: userId })
+        .getOne();
       if (cart) {
         const cartId = cart.id;
-        await this.cartItemRepository.createQueryBuilder().delete().from(CartItem).where("cartId = :cartId", { cartId: cartId }).execute();
+        await this.cartItemRepository
+          .createQueryBuilder()
+          .delete()
+          .from(CartItem)
+          .where('cartId = :cartId', { cartId: cartId })
+          .execute();
       }
 
       const userDeleted = await Promise.all([
-        this.cartRepository.createQueryBuilder().delete().from(Cart).where("userId = :userId", { userId: userId }).execute(),
-        this.orderRepository.createQueryBuilder().delete().from(Order).where("userId = :userId", { userId: userId }).execute(),
+        this.cartRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Cart)
+          .where('userId = :userId', { userId: userId })
+          .execute(),
+        this.orderRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Order)
+          .where('userId = :userId', { userId: userId })
+          .execute(),
 
-        this.favouriteRepository.createQueryBuilder().delete().from(Favourite).where("userId = :userId", { userId: userId }).execute(),
-        this.addressRepository.createQueryBuilder().delete().from(Address).where("userId = :userId", { userId: userId }).execute(),
+        this.favouriteRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Favourite)
+          .where('userId = :userId', { userId: userId })
+          .execute(),
+        this.addressRepository
+          .createQueryBuilder()
+          .delete()
+          .from(Address)
+          .where('userId = :userId', { userId: userId })
+          .execute(),
         this.usersRepo.delete(userId),
       ]);
-
 
       if (userDeleted) {
         return { message: CONSTANT_RESPONSE.DELETED_SUCCESSFULLY };
       }
-
-    }
-    else {
+    } else {
       return { message: CONSTANT_RESPONSE.RECORD_NOT_FOUND };
     }
   }
-
-
 
   async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
-    const verifyPass = verifyPassword(changePasswordDto.oldPassword, user.password);
+    const verifyPass = verifyPassword(
+      changePasswordDto.oldPassword,
+      user.password,
+    );
     if (verifyPass) {
       if (changePasswordDto.oldPassword === changePasswordDto.newPassword) {
-        throw new NotFoundException('Old password and new password cannot be same');
+        throw new NotFoundException(
+          'Old password and new password cannot be same',
+        );
       }
       const hashedPassword = hashPassword(changePasswordDto.newPassword);
 
@@ -138,17 +185,43 @@ export class UserService {
   }
 
   async changeUserStatus(userId: string, userStatusDto: userStatusDto) {
-
     const user = await this.usersRepo.findOne({ where: { id: userId } });
     if (!user) {
       throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
     }
-    await this.usersRepo.update(userId, { userStatus: userStatusDto.userStatus });
+    await this.usersRepo.update(userId, {
+      userStatus: userStatusDto.userStatus,
+    });
     return { message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
   }
   async signUp(createUserDto: CreateUserDto) {
-    createUserDto.displayName = createUserDto.firstName + ' ' + createUserDto.lastName;
+    createUserDto.displayName =
+      createUserDto.firstName + ' ' + createUserDto.lastName;
     try {
+      if (createUserDto.appleLogin) {
+        const findUserWithSocailId = await this.usersRepo.findOne({
+          where: { socialId: createUserDto.socialId },
+        });
+        if (findUserWithSocailId) {
+          const userObject = this.createToken(
+            { id: findUserWithSocailId.id, role: findUserWithSocailId.role },
+            findUserWithSocailId,
+            true,
+          );
+          return {
+            data: { userObject },
+            message: CONSTANT_RESPONSE.JWT_TOEKN,
+          };
+        } else {
+          const userToSave = { ...createUserDto, isVerified: true };
+          const { id, role, ...remain } = await this.usersRepo.save(userToSave);
+          const userObject = this.createToken({ id, role }, remain, true);
+          return {
+            data: { userObject },
+            message: CONSTANT_RESPONSE.JWT_TOEKN,
+          };
+        }
+      }
       const userFind = await this.usersRepo.findOne({
         where: [
           { email: createUserDto.email },
@@ -219,7 +292,10 @@ export class UserService {
           const { email, role, ...remain } =
             await this.usersRepo.save(userToSave);
           const otphash = await this.generateOtp(email, async (otp: any) => {
-            const modifiedTemplate = welcomeEmailTemplate.replace(/\${otp}/g, otp);
+            const modifiedTemplate = welcomeEmailTemplate.replace(
+              /\${otp}/g,
+              otp,
+            );
 
             await sendEmail(email, 'Welcome', modifiedTemplate);
           });
@@ -227,12 +303,9 @@ export class UserService {
             data: { otphash },
             message: CONSTANT_RESPONSE.SEND_OTP,
           };
-        }
-        else if (!userFind && createUserDto.phoneNumber) {
+        } else if (!userFind && createUserDto.phoneNumber) {
           throw new NotFoundException('Phone number not found or Verified');
         }
-
-
       }
     } catch (error) {
       return { message: error.message, status: false };
@@ -258,7 +331,11 @@ export class UserService {
       if (!userFind) {
         throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
       }
-      if(userFind.firstName == null && userFind.lastName == null && userFind.phoneNumber){
+      if (
+        userFind.firstName == null &&
+        userFind.lastName == null &&
+        userFind.phoneNumber
+      ) {
         throw new NotFoundException(CONSTANT_RESPONSE.INCOMPLETE_SIGNUP);
       }
       if (userFind.password == null) {
@@ -317,7 +394,9 @@ export class UserService {
 
     if (userFind && isEmail) {
       const otphash = await this.generateOtp(emailPhone, async (otp: any) => {
-        const modifiedTemplate = emailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
+        const modifiedTemplate = emailTemplate
+          .replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName)
+          .replace(/\${otp}/g, otp);
 
         await sendEmail(emailPhone, 'Reset Your Password', modifiedTemplate);
       });
@@ -325,19 +404,15 @@ export class UserService {
         data: { otphash },
         message: CONSTANT_RESPONSE.RESEND_EMAIL,
       };
-    }
-    else if(userFind && userFind.password == null && !isEmail){
+    } else if (userFind && userFind.password == null && !isEmail) {
       const deleteUser = await this.usersRepo.delete(userFind.id);
-      if(deleteUser.affected ===1){
+      if (deleteUser.affected === 1) {
         return {
           message: CONSTANT_RESPONSE.INCOMPLETE_SIGNUP,
           status: false,
-        }
+        };
       }
-    }
-    
-    
-    else if (userFind && !isEmail) {
+    } else if (userFind && !isEmail) {
       const sendOtpViaTwilio = async (otp: string) => {
         await this.twilioClient.messages.create({
           body: `${otp} is your Laundary App OTP. Do not share it with anyone.`,
@@ -404,7 +479,9 @@ export class UserService {
     if (userFind) {
       if (!userFind.isVerified) {
         const otphash = await this.generateOtp(email, async (otp: any) => {
-          const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName).replace(/\${otp}/g, otp);
+          const modifiedTemplate = resendEmailTemplate
+            .replace(/\${name}/g, userFind.firstName + ' ' + userFind.lastName)
+            .replace(/\${otp}/g, otp);
           await sendEmail(email, 'Verify Email OTP', modifiedTemplate);
         });
         return {
@@ -432,9 +509,13 @@ export class UserService {
     };
 
     if (userFind) {
-      if(userFind.isVerified && userFind.firstName == null  && userFind.lastName == null){
+      if (
+        userFind.isVerified &&
+        userFind.firstName == null &&
+        userFind.lastName == null
+      ) {
         const deleteUser = await this.usersRepo.delete(userFind.id);
-        if(deleteUser.affected === 1){
+        if (deleteUser.affected === 1) {
           const otphash = await this.generateOtp(phone, sendOtpViaTwilio);
           return { data: { otphash }, message: CONSTANT_RESPONSE.HASH };
         }
@@ -589,7 +670,7 @@ export class UserService {
   async updateUser(userId: string, updateUserDto: UpdateUserDto) {
     const findUser = await this.usersRepo.findOne({ where: { id: userId } });
 
-    if (updateUserDto.phoneNumber == "") {
+    if (updateUserDto.phoneNumber == '') {
       updateUserDto.phoneNumber = undefined;
     }
 
@@ -602,7 +683,6 @@ export class UserService {
       (updateUserDto.email != undefined &&
         updateUserDto.phoneNumber == undefined)
     ) {
-
       const updatedUser = await this.usersRepo.update(userId, {
         ...updateUserDto,
         email: undefined,
@@ -647,14 +727,19 @@ export class UserService {
           phoneNumber: undefined,
         });
 
-
         if (updatedUser.affected === 1) {
           const user = await this.getUserProfile(userId);
 
-          return { data: user, message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY };
+          return {
+            data: user,
+            message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+          };
         }
       }
-      if (findUser.email !== updateUserDto.email && findUser.phoneNumber == updateUserDto.phoneNumber) {
+      if (
+        findUser.email !== updateUserDto.email &&
+        findUser.phoneNumber == updateUserDto.phoneNumber
+      ) {
         await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
@@ -664,15 +749,25 @@ export class UserService {
           where: { email: updateUserDto.email },
         });
         if (userCheck) {
-          return { message: CONSTANT_RESPONSE.EMAIL_ALREADY_EXSIST, status: false };
-        }
-        else {
+          return {
+            message: CONSTANT_RESPONSE.EMAIL_ALREADY_EXSIST,
+            status: false,
+          };
+        } else {
           const otphash = await this.generateOtp(
             updateUserDto.email,
             async (otp: any) => {
-              const modifiedTemplate = resendEmailTemplate.replace(/\${name}/g, findUser.firstName + ' ' + findUser.lastName).replace(/\${otp}/g, otp);
-              await sendEmail(updateUserDto.email, 'Verify Email OTP', modifiedTemplate);
-
+              const modifiedTemplate = resendEmailTemplate
+                .replace(
+                  /\${name}/g,
+                  findUser.firstName + ' ' + findUser.lastName,
+                )
+                .replace(/\${otp}/g, otp);
+              await sendEmail(
+                updateUserDto.email,
+                'Verify Email OTP',
+                modifiedTemplate,
+              );
             },
           );
           return {
@@ -681,7 +776,10 @@ export class UserService {
           };
         }
       }
-      if (findUser.phoneNumber !== updateUserDto.phoneNumber && findUser.email == updateUserDto.email) {
+      if (
+        findUser.phoneNumber !== updateUserDto.phoneNumber &&
+        findUser.email == updateUserDto.email
+      ) {
         await this.usersRepo.update(userId, {
           ...updateUserDto,
           email: undefined,
@@ -691,17 +789,20 @@ export class UserService {
           where: { phoneNumber: updateUserDto.phoneNumber },
         });
         if (userCheck) {
-          return { message: CONSTANT_RESPONSE.USER_PHONE_ALREADY_EXSIST, status: false };
-        }
-        else {
+          return {
+            message: CONSTANT_RESPONSE.USER_PHONE_ALREADY_EXSIST,
+            status: false,
+          };
+        } else {
           return this.sendOtp(updateUserDto.phoneNumber);
         }
       }
-      if (findUser.email !== updateUserDto.email && findUser.phoneNumber !== updateUserDto.phoneNumber) {
+      if (
+        findUser.email !== updateUserDto.email &&
+        findUser.phoneNumber !== updateUserDto.phoneNumber
+      ) {
         return { message: CONSTANT_RESPONSE.BOTH_NOT_EXSIST, status: false };
-
-      }
-      else {
+      } else {
         return {
           data: null,
           message: CONSTANT_RESPONSE.UPDATE_FAILED,
@@ -725,7 +826,12 @@ export class UserService {
         userFind = await this.usersRepo.findOne({
           where: { id: userId },
         });
-        if (userFind && userFind.isVerified && (userFind.email !== null && userFind.phoneNumber !== null)) {
+        if (
+          userFind &&
+          userFind.isVerified &&
+          userFind.email !== null &&
+          userFind.phoneNumber !== null
+        ) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
@@ -736,7 +842,11 @@ export class UserService {
         userFind = await this.usersRepo.findOne({
           where: { id: userId },
         });
-        if (userFind && (userFind.email !== null && userFind.phoneNumber !== null)) {
+        if (
+          userFind &&
+          userFind.email !== null &&
+          userFind.phoneNumber !== null
+        ) {
           return { message: CONSTANT_RESPONSE.ALREADY_VERIFIED, status: false };
         }
         user = new Users();
@@ -780,13 +890,19 @@ export class UserService {
     return { data: user, message: CONSTANT_RESPONSE.GET_ALL };
   }
 
-  async getUserList(page: number, take: number, userStatus: string, customerName: string) {
-    const queryToGetData = this.usersRepo.createQueryBuilder('user')
-      .where('user.role = :role', { role: 'user' })
+  async getUserList(
+    page: number,
+    take: number,
+    userStatus: string,
+    customerName: string,
+  ) {
+    const queryToGetData = this.usersRepo
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: 'user' });
 
-
-    const queryToGetCount = this.usersRepo.createQueryBuilder('user')
-      .where('user.role = :role', { role: 'user' })
+    const queryToGetCount = this.usersRepo
+      .createQueryBuilder('user')
+      .where('user.role = :role', { role: 'user' });
 
     if (userStatus !== undefined) {
       queryToGetData.andWhere(`user.userStatus = '${userStatus}'`);
@@ -794,30 +910,36 @@ export class UserService {
     }
 
     if (customerName !== undefined) {
-      queryToGetData.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )', {
-        customerName: `%${customerName}%`,
-      });
-      queryToGetCount.andWhere('(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )', {
-        customerName: `%${customerName}%`,
-      });
+      queryToGetData.andWhere(
+        '(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )',
+        {
+          customerName: `%${customerName}%`,
+        },
+      );
+      queryToGetCount.andWhere(
+        '(user.firstName LIKE :customerName OR user.lastName LIKE :customerName OR user.email LIKE :customerName )',
+        {
+          customerName: `%${customerName}%`,
+        },
+      );
     }
 
     const skip = (page - 1) * take;
 
     const [query, totalCount, totalOrders] = await Promise.all([
-      queryToGetData.select([
-        'user.id',
-        'user.firstName',
-        'user.lastName',
-        'user.email',
-        'user.profileImage',
-        'user.userStatus',
-        'user.phoneNumber',
-        'user.profileImage',
-        'user.displayName',
-        'user.createdAt',
-
-      ])
+      queryToGetData
+        .select([
+          'user.id',
+          'user.firstName',
+          'user.lastName',
+          'user.email',
+          'user.profileImage',
+          'user.userStatus',
+          'user.phoneNumber',
+          'user.profileImage',
+          'user.displayName',
+          'user.createdAt',
+        ])
 
         .limit(take)
         .offset(skip)
@@ -827,24 +949,35 @@ export class UserService {
       this.usersRepo
         .createQueryBuilder('user')
         .leftJoin(
-          subQuery =>
+          (subQuery) =>
             subQuery
-              .select(['order.userId', 'COUNT(order.id) as orderCount', 'SUM(order.total) as totalAmount'])
+              .select([
+                'order.userId',
+                'COUNT(order.id) as orderCount',
+                'SUM(order.total) as totalAmount',
+              ])
               .from(Order, 'order')
               .groupBy('order.userId'),
           'orderCounts',
-          'user.id = orderCounts.userId'
+          'user.id = orderCounts.userId',
         )
-        .select(['user.id', 'orderCounts.orderCount', 'orderCounts.totalAmount'])
-        .getRawMany()
+        .select([
+          'user.id',
+          'orderCounts.orderCount',
+          'orderCounts.totalAmount',
+        ])
+        .getRawMany(),
     ]);
 
-
-
     return {
-      data: paginateResponseforUser({ query, totalCount, totalOrders, take, page }),
+      data: paginateResponseforUser({
+        query,
+        totalCount,
+        totalOrders,
+        take,
+        page,
+      }),
       message: CONSTANT_RESPONSE.RECORD_FOUND,
-    }
-
+    };
   }
 }

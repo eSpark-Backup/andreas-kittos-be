@@ -11,12 +11,12 @@ import {
 export class CreateUserDto {
   @ApiProperty({ type: String })
   @IsString({ message: 'First name must be a string' })
-  @IsNotEmpty({ message: 'First name cannot be empty' })
+  @IsOptional()
   readonly firstName: string;
 
   @ApiProperty({ type: String })
   @IsString({ message: 'Last name must be a string' })
-  @IsNotEmpty({ message: 'Last name cannot be empty' })
+  @IsOptional()
   readonly lastName: string;
 
   @ApiProperty({ type: String, default: 'user@mail.com' })
@@ -27,6 +27,10 @@ export class CreateUserDto {
 
   @ApiProperty({ type: String, required: false })
   readonly password: string;
+
+  @ApiProperty({ type: Boolean, required: false, default: false })
+  @IsOptional()
+  readonly appleLogin?: boolean;
 
   @ApiProperty({ type: String, required: false })
   @IsOptional()
