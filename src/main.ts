@@ -11,24 +11,25 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors();
-  const config = new DocumentBuilder()
-    .setTitle('Andreaskittos Backend API')
-    .setDescription('The andreaskittos API description')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
-      },
-      'jwt',
-    )
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('swagger', app, document);
+  // This is the Swagger configuration that we will use later for the API documentation
+  // const config = new DocumentBuilder()
+  //   .setTitle('Andreaskittos Backend API')
+  //   .setDescription('The andreaskittos API description')
+  //   .setVersion('1.0')
+  //   .addBearerAuth(
+  //     {
+  //       type: 'http',
+  //       scheme: 'bearer',
+  //       bearerFormat: 'JWT',
+  //       name: 'JWT',
+  //       description: 'Enter JWT token',
+  //       in: 'header',
+  //     },
+  //     'jwt',
+  //   )
+  //   .build();
+  //  const document = SwaggerModule.createDocument(app, config);
+  //  SwaggerModule.setup('swagger', app, document);
   await app.listen(port);
 }
 bootstrap();
