@@ -134,6 +134,13 @@ export class UserController {
     );
     return verificationResult;
   }
+  @Roles('admin')
+  @ApiBearerAuth('jwt')
+  @UseGuards(JwtAuthGuard, RoleGuard)
+  @Get('checkToken')
+  async checkToken() {
+    return 'Token is valid';
+  }
 
   @ApiConsumes('multipart/form-data')
   @swaggerDocs({
@@ -248,11 +255,20 @@ export class UserController {
     },
     badresponse: { status: 400, description: 'Bad Request' },
   })
-  
-  async userList(@Query('page') page?: string, @Query('take') take?: string, @Query('userStatus') userStatus?: string, @Query('customerName') customerName?: string){
+  async userList(
+    @Query('page') page?: string,
+    @Query('take') take?: string,
+    @Query('userStatus') userStatus?: string,
+    @Query('customerName') customerName?: string,
+  ) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return await this.userService.getUserList(+page, +take,userStatus,customerName);
+    return await this.userService.getUserList(
+      +page,
+      +take,
+      userStatus,
+      customerName,
+    );
   }
 
   @Roles('user')
@@ -272,7 +288,6 @@ export class UserController {
     return await this.userService.deleteUser(userId);
   }
 
-
   @Roles('admin')
   @ApiBearerAuth('jwt')
   @UseGuards(JwtAuthGuard, RoleGuard)
@@ -286,7 +301,10 @@ export class UserController {
     },
     badresponse: { status: 400, description: 'Bad Request' },
   })
-  async changeUserStatus(@Param('id') userId :string, @Body() userStatusDto:userStatusDto ) {
+  async changeUserStatus(
+    @Param('id') userId: string,
+    @Body() userStatusDto: userStatusDto,
+  ) {
     return await this.userService.changeUserStatus(userId, userStatusDto);
   }
 
@@ -303,7 +321,10 @@ export class UserController {
     },
     badresponse: { status: 400, description: 'Bad Request' },
   })
-  async changePassword (@UserId() userId:string, @Body() changePasswordDto:ChangePasswordDto ) {
-    return await this.userService.changePassword(userId,changePasswordDto);
+  async changePassword(
+    @UserId() userId: string,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    return await this.userService.changePassword(userId, changePasswordDto);
   }
 }
