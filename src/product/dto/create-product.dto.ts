@@ -1,5 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { IsNotEmpty, IsString, IsOptional, MaxLength, IsBoolean } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsString,
+  IsOptional,
+  MaxLength,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -23,12 +29,21 @@ export class CreateProductDto {
 
   @ApiProperty({
     example: 50,
-    description: 'Price of the product',
+    description: 'Price Range 1 of the product',
     required: true,
   })
   @IsNotEmpty()
   @IsString()
-  price: string;
+  price1: string;
+
+  @ApiProperty({
+    example: 50,
+    description: 'Price Range 2 of the product',
+    required: true,
+  })
+  @IsNotEmpty()
+  @IsString()
+  price2: string;
 
   @ApiProperty({
     example: 10,
@@ -58,8 +73,7 @@ export class CreateProductDto {
   @MaxLength(255, { message: 'Tags should not exceed 255 characters' })
   tags?: string;
 
-  @ApiProperty( {type: Boolean, default:false,required:false})
-
+  @ApiProperty({ type: Boolean, default: false, required: false })
   isGeneral: boolean;
 
   @ApiProperty({
@@ -72,4 +86,5 @@ export class CreateProductDto {
 
   productImage?: string;
   imageKey?: string;
+  price?: string;
 }
