@@ -29,7 +29,7 @@ export class CreateProductDto {
 
   @ApiProperty({
     example: 50,
-    description: 'Price Range 2 of the product',
+    description: 'Price Range 1 of the product',
     required: true,
   })
   @IsNotEmpty()

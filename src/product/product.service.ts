@@ -264,6 +264,12 @@ export class ProductService {
     delete updateProductDto.file;
     delete updateProductDto.categoryIds;
     delete updateProductDto.isGeneral;
+    if (updateProductDto.price1 && updateProductDto.price2) {
+      updateProductDto.price =
+        updateProductDto.price1 + '-' + updateProductDto.price2;
+      delete updateProductDto.price1;
+      delete updateProductDto.price2;
+    }
     const { affected } = await this.productRepository.update(
       id,
       updateProductDto,
@@ -333,10 +339,12 @@ export class ProductService {
 
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
-        `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
+        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
+     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
       );
       queryToGetCount.andWhere(
-        `CAST(product.price AS DECIMAL) BETWEEN ${minPrice} AND ${maxPrice}`,
+        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
+     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
       );
     }
 
@@ -387,6 +395,18 @@ export class ProductService {
         300,
       );
     }
+
+    query.forEach((category) => {
+      category.categoryProduct.forEach((categoryProduct) => {
+        categoryProduct.product['price1'] =
+          categoryProduct.product.price.split('-')[0];
+        categoryProduct.product['price2'] =
+          categoryProduct.product.price.split('-')[1];
+        //delete the price
+        delete categoryProduct.product.price;
+      });
+    });
+
     query.forEach((category) => {
       if (
         category.name === 'General' &&

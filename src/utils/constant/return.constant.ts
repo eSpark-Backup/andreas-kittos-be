@@ -1,3 +1,5 @@
+import { CANCELLED } from 'dns';
+
 export const CONSTANT_RESPONSE = {
   UPDATED_SUCCESSFULLY: 'Updated Successfully',
   PROFILE_UPDATED_SUCCESSFULLY: 'Profile updated Successfully',
@@ -15,6 +17,8 @@ export const CONSTANT_RESPONSE = {
   OTP_VARIFIED: 'OTP verified successfully',
   LOGIN_SUCCESS: 'Login Successfully',
   INVALID_ACCESS_TOKEN: 'Invalid access token',
+  CANCELLED: 'Order Cancelled Successfully',
+  FAILED: 'Order Failed to Cancel',
   TOKEN_EXPIRED: 'Token has Expired',
   LINK_EXPIRED_OR_INVALID: 'Password reset link is expired or invalid',
   PASSWORD_RESET: 'Password reset successfully',

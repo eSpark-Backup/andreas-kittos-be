@@ -1,6 +1,20 @@
 /* eslint-disable prettier/prettier */
-import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags, SwaggerModule } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiQuery,
+  ApiTags,
+  SwaggerModule,
+} from '@nestjs/swagger';
 import { CONSTANT_RESPONSE } from 'src/utils/constant/return.constant';
 import { Roles } from 'src/utils/decorator/role.decorator';
 import { swaggerDocs } from 'src/utils/decorator/swagger.decorator';
@@ -15,7 +29,7 @@ import { orderByState } from 'src/entity/order.entity';
 @ApiBearerAuth('jwt')
 @UseGuards(JwtAuthGuard, RoleGuard)
 export class OrderController {
-  constructor(private readonly orderService: OrderService) { }
+  constructor(private readonly orderService: OrderService) {}
 
   @Roles('user')
   @Post('create-order')
@@ -49,10 +63,12 @@ export class OrderController {
       description: CONSTANT_RESPONSE.UPDATE_REJECTION,
     },
   })
-  updateStatus(@Param('id') orderId: string, @Body() updateOrderStatusDto: UpdateOrderStatusDto) {
+  updateStatus(
+    @Param('id') orderId: string,
+    @Body() updateOrderStatusDto: UpdateOrderStatusDto,
+  ) {
     return this.orderService.updateOrderStatus(orderId, updateOrderStatusDto);
   }
-
 
   @Roles('admin')
   @Get('order-list')
@@ -60,13 +76,15 @@ export class OrderController {
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'userId', required: false })
   @ApiQuery({ name: 'orderState', required: false, enum: orderByState })
-  @ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending', 'failed', 'success'] })
+  @ApiQuery({
+    name: 'paymentStatus',
+    required: false,
+    enum: ['pending', 'failed', 'success'],
+  })
   @ApiQuery({ name: 'paymentType', required: false, enum: ['COD', 'CARD'] })
   @ApiQuery({ name: 'Order#/Name/Email', required: false })
   @ApiQuery({ name: 'startDate', required: false })
   @ApiQuery({ name: 'endDate', required: false })
-
-
   @swaggerDocs({
     summary: 'Get List of Total Orders(Admin Access)',
     type: null,
@@ -79,8 +97,8 @@ export class OrderController {
       description: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
     },
   })
-
-  orderList(@Query('page') page?: string,
+  orderList(
+    @Query('page') page?: string,
     @Query('take') take?: string,
     @Query('userId') userId?: string,
     @Query('orderState') orderState?: string,
@@ -88,11 +106,21 @@ export class OrderController {
     @Query('paymentType') paymentType?: string,
     @Query('Order#/Name/Email') customerName?: string,
     @Query('startDate') startDate?: string,
-    @Query('endDate') endDate?: string) {
-
+    @Query('endDate') endDate?: string,
+  ) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
-    return this.orderService.orderList(+page, +take, userId, orderState, paymentStatus, paymentType, startDate, endDate, customerName);
+    return this.orderService.orderList(
+      +page,
+      +take,
+      userId,
+      orderState,
+      paymentStatus,
+      paymentType,
+      startDate,
+      endDate,
+      customerName,
+    );
   }
 
   @Roles('user')
@@ -112,10 +140,32 @@ export class OrderController {
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'take', required: false })
   @ApiQuery({ name: 'orderState', required: false, enum: orderByState })
-  userOrderDetail(@UserId() userId: string, @Query('page') page?: string, @Query('take') take?: string, @Query('orderState') orderState?: string) {
+  userOrderDetail(
+    @UserId() userId: string,
+    @Query('page') page?: string,
+    @Query('take') take?: string,
+    @Query('orderState') orderState?: string,
+  ) {
     if (isNaN(+page) || !page || !+page) page = '1';
     if (isNaN(+take) || !take || !+take) take = '10';
     return this.orderService.userOrderDetail(userId, +page, +take, orderState);
+  }
+  @Roles('user')
+  @Put('cancel-order/:orderId')
+  @swaggerDocs({
+    summary: 'Cancel Order',
+    type: null,
+    goodResponse: {
+      status: 200,
+      description: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
+    },
+    badresponse: {
+      status: 400,
+      description: CONSTANT_RESPONSE.UPDATE_REJECTION,
+    },
+  })
+  cancelOrder(@UserId() userId: string, @Param('orderId') orderId: string) {
+    return this.orderService.cancelOrder(userId, orderId);
   }
 
   @Roles('user')
@@ -138,9 +188,12 @@ export class OrderController {
 
   @Roles('admin')
   @Put('payment-status/:id')
-  @ApiQuery({ name: 'paymentStatus', required: false, enum: ['pending', 'failed', 'success'] })
+  @ApiQuery({
+    name: 'paymentStatus',
+    required: false,
+    enum: ['pending', 'failed', 'success'],
+  })
   @ApiQuery({ name: 'paymentType', required: false, enum: ['COD', 'CARD'] })
-
   @swaggerDocs({
     summary: 'Update Payment Status',
     type: null,
@@ -153,7 +206,11 @@ export class OrderController {
       description: CONSTANT_RESPONSE.UPDATE_REJECTION,
     },
   })
-  updatePaymentStatus(@Param('id') orderId: string, @Query('paymentStatus') paymentStatus?: string, @Query('paymentType') paymentType?: string) {
+  updatePaymentStatus(
+    @Param('id') orderId: string,
+    @Query('paymentStatus') paymentStatus?: string,
+    @Query('paymentType') paymentType?: string,
+  ) {
     return this.orderService.paymentStatus(orderId, paymentStatus, paymentType);
   }
 
@@ -209,6 +266,5 @@ export class OrderController {
   })
   chartData() {
     return this.orderService.chartData();
-
   }
 }
