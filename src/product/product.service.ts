@@ -74,6 +74,11 @@ export class ProductService {
       }
       delete createProductDto.categoryIds;
       delete createProductDto.isGeneral;
+      createProductDto.price =
+        createProductDto.price1 + '-' + createProductDto.price2;
+      delete createProductDto.price1;
+      delete createProductDto.price2;
+
       createProductDto.productImage = uploadResult.url;
       createProductDto.imageKey = uploadResult.fileId;
       const createProductRes =
@@ -399,7 +404,6 @@ export class ProductService {
     });
 
     if (categoryId != null || categoryId != undefined) {
-
       const otherCategories = await this.categoryRepository.find({
         where: { name: Not('General') },
         relations: ['categoryProduct', 'categoryProduct.product'],
@@ -422,31 +426,27 @@ export class ProductService {
       });
     }
 
-      query.forEach((category) => {
-        if (category.name === 'General') {
-          category.categoryProduct.forEach((categoryProduct) => {
-            query.forEach((otherCategory) => {
-              if (otherCategory.name !== 'General') {
-                otherCategory.categoryProduct.forEach(
-                  (otherCategoryProduct) => {
-                    if (
-                      otherCategoryProduct.product.id ===
-                      categoryProduct.product.id
-                    ) {
-                      categoryProduct.product['mainCategory'] =
-                        otherCategory.name;
-                    }
-                  },
-                );
-              }
-            });
+    query.forEach((category) => {
+      if (category.name === 'General') {
+        category.categoryProduct.forEach((categoryProduct) => {
+          query.forEach((otherCategory) => {
+            if (otherCategory.name !== 'General') {
+              otherCategory.categoryProduct.forEach((otherCategoryProduct) => {
+                if (
+                  otherCategoryProduct.product.id === categoryProduct.product.id
+                ) {
+                  categoryProduct.product['mainCategory'] = otherCategory.name;
+                }
+              });
+            }
           });
-        }
-      });
+        });
+      }
+    });
 
-      return {
-        data: paginateResponse({ query, totalCount, take, page }),
-        message: CONSTANT_RESPONSE.RECORD_FOUND,
-      };
+    return {
+      data: paginateResponse({ query, totalCount, take, page }),
+      message: CONSTANT_RESPONSE.RECORD_FOUND,
+    };
   }
 }

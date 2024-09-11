@@ -20,12 +20,19 @@ export class UpdateProductDto {
 
   @ApiProperty({
     example: 50,
-    description: 'Price of the product',
+    description: 'Price Range 1 of the product',
     required: false,
   })
   @IsOptional()
-  @IsString()
-  price?: string;
+  price1?: string;
+
+  @ApiProperty({
+    example: 50,
+    description: 'Price Range 2 of the product',
+    required: false,
+  })
+  @IsOptional()
+  price2?: string;
 
   @ApiProperty({
     example: 10,
@@ -55,8 +62,7 @@ export class UpdateProductDto {
   @MaxLength(255, { message: 'Tags should not exceed 255 characters' })
   tags?: string;
 
-  @ApiProperty( {type: Boolean, default:false,required:false})
-
+  @ApiProperty({ type: Boolean, default: false, required: false })
   isGeneral: boolean;
 
   @ApiProperty({
@@ -69,4 +75,5 @@ export class UpdateProductDto {
 
   productImage?: string;
   imageKey?: string;
+  price?: string;
 }

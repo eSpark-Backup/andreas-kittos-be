@@ -6,12 +6,11 @@ config();
 
 const port: number = parseInt(<string>process.env.MYSQL_PORT);
 export const typeOrmConfig: TypeOrmModuleOptions = {
-  type: 'mysql',
-  host: process.env.MYSQL_HOST,
+  type: 'mariadb',
+  host: process.env.DB_HOST,
   port: port,
-  username: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASSWORD,
-  database: process.env.MYSQL_DATABASE,
+  username: 'root',
+  database: 'andreaskittos',
   entities: [__dirname + '/src/entity/*.entity.{js,ts}'],
   migrations: [__dirname + '/src/migrations/*.{js,ts}'],
   synchronize: true,
