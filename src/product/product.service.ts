@@ -126,6 +126,12 @@ export class ProductService {
     const productResult = await this.productRepository.findOne({
       where: { id: id, isDeleted: false },
     });
+    //change the price to price1 and price2
+    if (productResult.price) {
+      productResult['price1'] = productResult.price.split('-')[0];
+      productResult['price2'] = productResult.price.split('-')[1];
+      delete productResult.price;
+    }
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
@@ -133,6 +139,7 @@ export class ProductService {
           message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
           status: false,
         };
+
     return result;
   }
 
