@@ -186,6 +186,15 @@ export class OrderService {
   ) {
     let userOrderData;
     let user;
+    const skip = (page - 1) * take;
+
+    const orders = await this.orderRepository
+      .createQueryBuilder('order')
+      .limit(take)
+      .offset(skip)
+      .orderBy('order.createdAt', 'DESC')
+      .select(['order.id'])
+      .getMany();
 
     const queryToGetData = this.orderRepository
       .createQueryBuilder('order')
@@ -194,14 +203,13 @@ export class OrderService {
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.user', 'user')
-      .leftJoinAndSelect('order.payment', 'payment');
+      .leftJoinAndSelect('order.payment', 'payment')
+      .whereInIds(orders.map((order) => order.id));
 
     const queryToGetCount = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user');
-
-    const skip = (page - 1) * take;
 
     if (customerName) {
       const terms = customerName.trim().split(' ');
@@ -339,12 +347,15 @@ export class OrderService {
           'product.price',
           'product.productImage',
         ])
-        .limit(take)
-        .offset(skip)
+
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
     ]);
+    //get count of orders based on skip and page
+    // First, fetch paginated orders
+
+    // Then, separately load related entities
 
     return {
       data: paginateResponseforTotal({
