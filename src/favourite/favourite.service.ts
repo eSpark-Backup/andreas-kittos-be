@@ -61,7 +61,6 @@ export class FavouriteService {
       .createQueryBuilder('favourite')
       .where('favourite.productId = :productId', { productId })
       .getManyAndCount();
-    //its coming as an array so get to 0 index where the single product data is
 
     if (!favourite) {
       return {
