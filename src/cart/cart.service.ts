@@ -21,7 +21,7 @@ export class CartService {
 
     @InjectRepository(CartItem)
     private readonly cartItemRepository: Repository<CartItem>,
-  ) { }
+  ) {}
 
   async createCart(userId: Users, simpleCart: simpleCartDto[]) {
     const simpleCartArray = Array.isArray(simpleCart)
@@ -37,11 +37,8 @@ export class CartService {
       .where('cart.userId = :userId', { userId })
       .getOne();
 
-
     if (existingCart) {
       for (const itemDto of cartDto.items) {
-
-
         let existingItem;
         for (const cartItem of existingCart.items) {
           if (String(cartItem.product.id) === String(itemDto.product)) {
@@ -50,15 +47,14 @@ export class CartService {
           }
         }
 
-
         if (existingItem) {
           existingItem.quantity += itemDto.quantity;
         } else {
           const newItem = new CartItem();
           newItem.quantity = itemDto.quantity;
           newItem.product = itemDto.product;
-          newItem.cart = existingCart.id; 
-          existingCart.items.push(newItem); 
+          newItem.cart = existingCart.id;
+          existingCart.items.push(newItem);
         }
       }
 
@@ -77,10 +73,7 @@ export class CartService {
         data: updatedCart,
         message: CONSTANT_RESPONSE.UPDATED_SUCCESSFULLY,
       };
-    }
-
-
-    else {
+    } else {
       const newCart = new Cart();
       newCart.user = userId;
 
@@ -106,6 +99,12 @@ export class CartService {
       .leftJoinAndSelect('items.product', 'product')
       .where('cart.userId = :userId', { userId })
       .getOne();
+
+    cart.items.forEach((item) => {
+      item.product['price1'] = item.product.price.split('-')[0];
+      item.product['price2'] = item.product.price.split('-')[1];
+      delete item.product.price;
+    });
 
     return { data: cart, message: CONSTANT_RESPONSE.GET_ALL };
   }

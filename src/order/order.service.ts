@@ -352,6 +352,14 @@ export class OrderService {
         .getMany(),
       queryToGetCount.getCount(),
     ]);
+
+    query.forEach((category) => {
+      category.orderDetail.forEach((orderDetail) => {
+        orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+        orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+        delete orderDetail.product.price;
+      });
+    });
     //get count of orders based on skip and page
     // First, fetch paginated orders
 
@@ -495,6 +503,11 @@ export class OrderService {
     if (!order) {
       throw new Error('Order not found');
     }
+    order.orderDetail.forEach((orderDetail) => {
+      orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+      orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+      delete orderDetail.product.price;
+    });
     return {
       data: order,
       message: 'Order detail',
