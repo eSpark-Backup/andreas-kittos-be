@@ -417,7 +417,7 @@ export class ProductService {
         categoryProduct.product['price2'] =
           categoryProduct.product.price.split('-')[1];
         //delete the price
-        delete categoryProduct.product.price;
+        // delete categoryProduct.product.price;
       });
     });
 
