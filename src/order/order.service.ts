@@ -360,10 +360,38 @@ export class OrderService {
   }
   async cancelOrder(userId: string, orderId: string) {
     try {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId, user: { id: userId } },
+      });
+
+      if (!order) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.USER_NOT,
+        };
+      }
+      if (order.orderState === orderByState.completed) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.FAILED_Completed,
+        };
+      }
+      if (order.orderStatus.delivered) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.FAILED_PROCESS,
+        };
+      }
+      order.orderState = orderByState.cancelled;
+      await this.orderRepository.save(order);
+      return {
+        data: order,
+        message: CONSTANT_RESPONSE.CANCELLED,
+      };
     } catch (error) {
       return {
         data: null,
-        message: CONSTANT_RESPONSE.CANCELLED,
+        message: CONSTANT_RESPONSE.FAILED,
       };
     }
   }
