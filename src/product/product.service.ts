@@ -346,12 +346,19 @@ export class ProductService {
 
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
-        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
-     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
+        `
+    CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= :maxPrice 
+    AND CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= :minPrice
+  `,
+        { maxPrice, minPrice },
       );
+
       queryToGetCount.andWhere(
-        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
-     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
+        `
+    CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= :maxPrice 
+    AND CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= :minPrice
+  `,
+        { maxPrice, minPrice },
       );
     }
 
