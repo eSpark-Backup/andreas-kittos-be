@@ -82,6 +82,13 @@ export class FavouriteService {
       .where('favourite.userId = :userId', { userId })
       .getMany();
 
+    //convert the product price to price1 and price 2
+    favourites.forEach((favourite) => {
+      favourite.productId['price1'] = favourite.productId.price.split('-')[0];
+      favourite.productId['price2'] = favourite.productId.price.split('-')[1];
+      delete favourite.productId.price;
+    });
+
     if (!favourites) {
       return {
         data: [],
