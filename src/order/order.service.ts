@@ -190,8 +190,8 @@ export class OrderService {
 
     const orders = this.orderRepository
       .createQueryBuilder('order')
-      .limit(take)
-      .offset(skip)
+      // .limit(take)
+      // .offset(skip)
       .orderBy('order.createdAt', 'DESC')
       .select(['order.id']);
 
@@ -363,6 +363,8 @@ export class OrderService {
           'product.price',
           'product.productImage',
         ])
+        .limit(take)
+        .offset(skip)
 
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
