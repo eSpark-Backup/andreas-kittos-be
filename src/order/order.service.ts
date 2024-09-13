@@ -190,8 +190,9 @@ export class OrderService {
 
     const orders = this.orderRepository
       .createQueryBuilder('order')
-      // .limit(take)
-      // .offset(skip)
+
+      .limit(take)
+      .offset(skip)
       .orderBy('order.createdAt', 'DESC')
       .select(['order.id']);
 
@@ -321,13 +322,15 @@ export class OrderService {
       };
     }
     if (orderState !== undefined) {
-      queryToGetData.andWhere('orderState = :orderState', { orderState });
-      orders.andWhere('orderState = :orderState', { orderState });
-      queryToGetCount.andWhere('orderState = :orderState', { orderState });
+      queryToGetData.andWhere('order.orderState = :orderState', { orderState });
+      orders.andWhere('order.orderState = :orderState', { orderState });
+      queryToGetCount.andWhere('order.orderState = :orderState', {
+        orderState,
+      });
     }
     const allOrderCount = await orders.getMany();
 
-    queryToGetCount.andWhereInIds(allOrderCount.map((order) => order.id));
+    queryToGetData.andWhereInIds(allOrderCount.map((order) => order.id));
 
     const [query, totalCount] = await Promise.all([
       queryToGetData
@@ -363,8 +366,6 @@ export class OrderService {
           'product.price',
           'product.productImage',
         ])
-        .limit(take)
-        .offset(skip)
 
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
