@@ -126,6 +126,9 @@ export class OrderService {
     if (!order) {
       throw new Error('Order not found');
     }
+    if (order.orderState === orderByState.cancelled) {
+      throw new Error('Order already cancelled, you can not update status');
+    }
 
     if (orderState !== undefined) {
       order.orderState = orderByState[orderState];
