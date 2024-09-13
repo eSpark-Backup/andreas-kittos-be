@@ -188,13 +188,12 @@ export class OrderService {
     let user;
     const skip = (page - 1) * take;
 
-    const orders = await this.orderRepository
+    const orders = this.orderRepository
       .createQueryBuilder('order')
       .limit(take)
       .offset(skip)
       .orderBy('order.createdAt', 'DESC')
-      .select(['order.id'])
-      .getMany();
+      .select(['order.id']);
 
     const queryToGetData = this.orderRepository
       .createQueryBuilder('order')
@@ -203,8 +202,7 @@ export class OrderService {
       .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
       .leftJoinAndSelect('categoryProduct.category', 'category')
       .leftJoinAndSelect('order.user', 'user')
-      .leftJoinAndSelect('order.payment', 'payment')
-      .whereInIds(orders.map((order) => order.id));
+      .leftJoinAndSelect('order.payment', 'payment');
 
     const queryToGetCount = this.orderRepository
       .createQueryBuilder('order')
@@ -227,6 +225,7 @@ export class OrderService {
       }, {});
 
       queryToGetData.andWhere(whereClauses, params);
+      orders.andWhere(whereClauses, params);
       queryToGetCount.andWhere(whereClauses, params);
     }
 
@@ -235,6 +234,9 @@ export class OrderService {
       startDateObj.setHours(0, 0, 0, 0);
       console.log(startDateObj);
       queryToGetData.andWhere('order.createdAt >= :startDate', {
+        startDate: startDateObj,
+      });
+      orders.andWhere('order.createdAt >= :startDate', {
         startDate: startDateObj,
       });
       queryToGetCount.andWhere('order.createdAt >= :startDate', {
@@ -248,6 +250,9 @@ export class OrderService {
       queryToGetData.andWhere('order.createdAt <= :endDate', {
         endDate: endDateObj,
       });
+      orders.andWhere('order.createdAt <= :endDate', {
+        endDate: endDateObj,
+      });
       queryToGetCount.andWhere('order.createdAt <= :endDate', {
         endDate: endDateObj,
       });
@@ -257,6 +262,9 @@ export class OrderService {
       queryToGetData.andWhere('payment.paymentType = :paymentType', {
         paymentType,
       });
+      orders.andWhere('payment.paymentType = :paymentType', {
+        paymentType,
+      });
       queryToGetCount.andWhere('payment.paymentType = :paymentType', {
         paymentType,
       });
@@ -264,6 +272,9 @@ export class OrderService {
 
     if (paymentStatus !== undefined) {
       queryToGetData.andWhere('payment.paymentStatus = :paymentStatus', {
+        paymentStatus,
+      });
+      orders.andWhere('payment.paymentStatus = :paymentStatus', {
         paymentStatus,
       });
       queryToGetCount.andWhere('payment.paymentStatus = :paymentStatus', {
@@ -311,8 +322,13 @@ export class OrderService {
     }
     if (orderState !== undefined) {
       queryToGetData.andWhere('orderState = :orderState', { orderState });
+      orders.andWhere('orderState = :orderState', { orderState });
       queryToGetCount.andWhere('orderState = :orderState', { orderState });
     }
+    const allOrderCount = await orders.getMany();
+
+    queryToGetCount.andWhereInIds(allOrderCount.map((order) => order.id));
+
     const [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
