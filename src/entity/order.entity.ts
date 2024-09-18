@@ -46,12 +46,11 @@ export class Order extends BaseEntity {
     deliveredReason: string;
   };
 
+  @Column({ type: 'varchar', nullable: true })
+  total: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  total: number;
-
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true})
-  subTotal: number;
+  @Column({ type: 'varchar', nullable: true })
+  subTotal: string;
 
   @Column({ type: 'varchar', length: 50 })
   shippingType: string;
@@ -62,7 +61,7 @@ export class Order extends BaseEntity {
   @Column({ type: 'varchar' })
   note: string;
 
-  @Column({ type: 'varchar' ,nullable: true})
+  @Column({ type: 'varchar', nullable: true })
   deliveryDate: string;
 
   @Column({ type: 'enum', enum: orderByState, default: orderByState.pending })
@@ -70,7 +69,6 @@ export class Order extends BaseEntity {
 
   @OneToOne(() => Payment, (payment) => payment.order, { cascade: true })
   payment: Payment;
-
 
   @Column('json')
   shippingAddress: {
@@ -92,11 +90,10 @@ export class Order extends BaseEntity {
   @JoinColumn({ name: 'userId' })
   user: Users;
 
-  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order, { cascade: true })
+  @OneToMany(() => OrderDetail, (orderDetail) => orderDetail.order, {
+    cascade: true,
+  })
   orderDetail: OrderDetail[];
-
-
-
 }
 
-// addressId,userId,shippingAddress,billingAddress,note,deliveryDate,deliveryCharges,shippingType,status 
+// addressId,userId,shippingAddress,billingAddress,note,deliveryDate,deliveryCharges,shippingType,status

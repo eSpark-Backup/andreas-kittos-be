@@ -16,11 +16,11 @@ export class Checkout extends BaseEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
-  total: number;
+  @Column({ type: 'varchar', nullable: true })
+  total: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  subTotal: number;
+  @Column({ type: 'varchar', nullable: true })
+  subTotal: string;
 
   @Column({ type: 'varchar', length: 50 })
   shippingType: string;

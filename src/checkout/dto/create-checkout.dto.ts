@@ -2,16 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CheckoutDto {
-  @ApiProperty({ description: 'Total amount of the checkout', example: 100.0 })
+  @ApiProperty({ description: 'Total amount of the checkout', example: '100' })
   @IsNotEmpty({ message: 'Total cannot be empty' })
-  total: number;
+  total: string;
 
   @ApiProperty({
     description: 'Sub Total amount of the checkout',
     example: 100.0,
   })
   @IsNotEmpty({ message: 'Sub Total cannot be empty' })
-  subTotal: number;
+  subTotal: string;
 
   @ApiProperty({
     description: 'Type of shipping (e.g., express, standard)',
