@@ -103,6 +103,10 @@ export class OrderService {
     await this.orderRepository.save(order);
     await this.checkoutRepository.delete(checkout.id);
     await this.cartItemRepository.delete({ cart: checkout.cart.id });
+    order.orderDetail.forEach(async (orderDetail) => {
+      orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+      orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+    });
 
     return {
       data: order,
