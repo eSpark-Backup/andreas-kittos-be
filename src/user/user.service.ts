@@ -344,7 +344,30 @@ export class UserService {
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
         if (userFind.isVerified === false) {
-          throw new NotFoundException(CONSTANT_RESPONSE.NOT_VARIFIED);
+          const otphash = await this.generateOtp(
+            userFind.email,
+            async (otp: any) => {
+              const modifiedTemplate = resendEmailTemplate
+                .replace(
+                  /\${name}/g,
+                  userFind.firstName + ' ' + userFind.lastName,
+                )
+                .replace(/\${otp}/g, otp);
+              await sendEmail(
+                userFind.email,
+                'Verify Email OTP',
+                modifiedTemplate,
+              );
+            },
+          );
+          return {
+            message: CONSTANT_RESPONSE.NOT_VARIFIED,
+            status: false,
+            data: {
+              verified: false,
+              hash: otphash,
+            },
+          };
         }
         const userObject = this.createToken(
           { id: userFind.id, role: userFind.role },
