@@ -222,16 +222,26 @@ export class OrderService {
       const terms = customerName.trim().split(' ');
 
       const whereClauses = terms
-        .map(
-          (_, index) =>
-            `(user.firstName LIKE :term${index} OR user.lastName LIKE :term${index} OR user.email LIKE :term${index} OR order.orderNumber = :term${index})`,
-        )
+        .map((_, index) => {
+          // Use '=' for order number comparison and 'LIKE' for other fields
+          return `(user.firstName LIKE :term${index} OR user.lastName LIKE :term${index} OR user.email LIKE :term${index} OR order.orderNumber = :term${index})`;
+        })
         .join(' AND ');
 
-      const params = terms.reduce((acc, term, index) => {
-        acc[`term${index}`] = `%${term}%`;
-        return acc;
-      }, {});
+      const params = terms.reduce(
+        (acc, term, index) => {
+          // Check if the term is a valid number for orderNumber, otherwise use string matching
+          if (!isNaN(Number(term))) {
+            // Use exact match for numbers (orderNumber)
+            acc[`term${index}`] = Number(term);
+          } else {
+            // Use LIKE for string fields
+            acc[`term${index}`] = `%${term}%`;
+          }
+          return acc;
+        },
+        {} as Record<string, string | number>,
+      ); // Ensuring the type of params is correct
 
       queryToGetData.andWhere(whereClauses, params);
       orders.andWhere(whereClauses, params);
