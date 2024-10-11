@@ -197,6 +197,7 @@ export class OrderService {
 
     const orders = this.orderRepository
       .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
 
       .limit(take)
       .offset(skip)
