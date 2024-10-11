@@ -338,6 +338,7 @@ export class OrderService {
     const allOrderCount = await orders.getMany();
 
     queryToGetData.andWhereInIds(allOrderCount.map((order) => order.id));
+    queryToGetCount.andWhereInIds(allOrderCount.map((order) => order.id));
 
     const [query, totalCount] = await Promise.all([
       queryToGetData
