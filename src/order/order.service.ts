@@ -292,6 +292,8 @@ export class OrderService {
 
     if (userId !== undefined) {
       queryToGetData.andWhere('userId = :userId', { userId });
+      orders.andWhere('userId = :userId', { userId });
+
       queryToGetCount.andWhere('userId = :userId', { userId });
       const totalordersforUser = await this.orderRepository
         .createQueryBuilder('order')
