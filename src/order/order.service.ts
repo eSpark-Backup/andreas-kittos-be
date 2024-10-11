@@ -203,14 +203,13 @@ export class OrderService {
       .orderBy('order.createdAt', 'DESC')
       .select(['order.id']);
 
-    const queryToGetData = this.orderRepository
-      .createQueryBuilder('order')
-      .leftJoinAndSelect('order.orderDetail', 'orderDetail')
-      .leftJoinAndSelect('orderDetail.product', 'product')
-      .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
-      .leftJoinAndSelect('categoryProduct.category', 'category')
-      .leftJoinAndSelect('order.user', 'user')
-      .leftJoinAndSelect('order.payment', 'payment');
+    const queryToGetData = this.orderRepository.createQueryBuilder('order');
+    // .leftJoinAndSelect('order.orderDetail', 'orderDetail')
+    // .leftJoinAndSelect('orderDetail.product', 'product')
+    // .leftJoinAndSelect('product.categoryProduct', 'categoryProduct')
+    // .leftJoinAndSelect('categoryProduct.category', 'category')
+    // .leftJoinAndSelect('order.user', 'user')
+    // .leftJoinAndSelect('order.payment', 'payment');
 
     const queryToGetCount = this.orderRepository
       .createQueryBuilder('order')
@@ -232,7 +231,7 @@ export class OrderService {
         return acc;
       }, {});
 
-      queryToGetData.andWhere(whereClauses, params);
+      //  queryToGetData.andWhere(whereClauses, params);
       orders.andWhere(whereClauses, params);
       queryToGetCount.andWhere(whereClauses, params);
     }
@@ -241,9 +240,9 @@ export class OrderService {
       const startDateObj = new Date(startDate);
       startDateObj.setHours(0, 0, 0, 0);
       console.log(startDateObj);
-      queryToGetData.andWhere('order.createdAt >= :startDate', {
-        startDate: startDateObj,
-      });
+      // queryToGetData.andWhere('order.createdAt >= :startDate', {
+      //   startDate: startDateObj,
+      // });
       orders.andWhere('order.createdAt >= :startDate', {
         startDate: startDateObj,
       });
@@ -255,9 +254,9 @@ export class OrderService {
       const endDateObj = new Date(endDate);
       endDateObj.setHours(23, 59, 59, 999);
       console.log(endDateObj);
-      queryToGetData.andWhere('order.createdAt <= :endDate', {
-        endDate: endDateObj,
-      });
+      // queryToGetData.andWhere('order.createdAt <= :endDate', {
+      //   endDate: endDateObj,
+      // });
       orders.andWhere('order.createdAt <= :endDate', {
         endDate: endDateObj,
       });
@@ -267,9 +266,9 @@ export class OrderService {
     }
 
     if (paymentType !== undefined) {
-      queryToGetData.andWhere('payment.paymentType = :paymentType', {
-        paymentType,
-      });
+      // queryToGetData.andWhere('payment.paymentType = :paymentType', {
+      //   paymentType,
+      // });
       orders.andWhere('payment.paymentType = :paymentType', {
         paymentType,
       });
@@ -279,9 +278,9 @@ export class OrderService {
     }
 
     if (paymentStatus !== undefined) {
-      queryToGetData.andWhere('payment.paymentStatus = :paymentStatus', {
-        paymentStatus,
-      });
+      // queryToGetData.andWhere('payment.paymentStatus = :paymentStatus', {
+      //   paymentStatus,
+      // });
       orders.andWhere('payment.paymentStatus = :paymentStatus', {
         paymentStatus,
       });
