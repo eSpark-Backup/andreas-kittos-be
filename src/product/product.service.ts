@@ -114,11 +114,20 @@ export class ProductService {
       .andWhere('product.isDeleted = false')
       .getMany();
 
-    result.forEach((result) => {
-      result['isGeneral'] = result.categoryProduct.some((categoryProduct) => {
+    result.forEach((product) => {
+      // Check if the product has a category named 'General'
+      product['isGeneral'] = product.categoryProduct.some((categoryProduct) => {
         return categoryProduct.category.name === 'General';
       });
+
+      if (product.price) {
+        const [price1, price2] = product.price.split('-');
+        product['price1'] = price1;
+        product['price2'] = price2;
+        delete product.price;
+      }
     });
+
     return { data: result, message: CONSTANT_RESPONSE.RECORD_FOUND };
   }
 
