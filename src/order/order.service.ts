@@ -459,6 +459,19 @@ export class OrderService {
     take: number,
     orderState: string,
   ) {
+    const skip = (page - 1) * take;
+
+    const orders = this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+
+      .andWhere('user.id = :userId', { userId })
+
+      .limit(take)
+      .offset(skip)
+      .orderBy('order.createdAt', 'DESC')
+      .select(['order.id']);
+
     const queryToGetData = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
@@ -479,9 +492,13 @@ export class OrderService {
       queryToGetCount.andWhere('order.orderState = :orderState', {
         orderState,
       });
+      orders.andWhere('order.orderState = :orderState', {
+        orderState,
+      });
     }
-    const skip = (page - 1) * take;
+    const allOrderCount = await orders.getMany();
 
+    queryToGetData.andWhereInIds(allOrderCount.map((order) => order.id));
     const [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
@@ -515,8 +532,6 @@ export class OrderService {
           'product.productImage',
         ])
 
-        .limit(take)
-        .offset(skip)
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
