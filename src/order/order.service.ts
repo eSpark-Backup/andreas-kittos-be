@@ -537,6 +537,14 @@ export class OrderService {
       queryToGetCount.getCount(),
     ]);
 
+    query.forEach((order) => {
+      order.orderDetail.forEach((orderDetail) => {
+        orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+        orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+        delete orderDetail.product.price;
+      });
+    });
+
     return {
       data: paginateResponse({ query, totalCount, take, page }),
       message: 'Order detail',
