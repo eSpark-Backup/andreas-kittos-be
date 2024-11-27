@@ -313,6 +313,82 @@ export class UserService {
     throw new NotFoundException('Something went wrong while Creating User');
   }
 
+  async adminSignin(loginDto: LoginDto) {
+    try {
+      let userFind = null;
+      let isEmail = null;
+      if (this.isEmail(loginDto.userCred)) {
+        userFind = await this.usersRepo.findOne({
+          where: { email: loginDto.userCred },
+        });
+        isEmail = true;
+      } else {
+        userFind = await this.usersRepo.findOne({
+          where: { phoneNumber: loginDto.userCred },
+        });
+        isEmail = false;
+      }
+      if (!userFind) {
+        throw new NotFoundException(CONSTANT_RESPONSE.NOT_EXSIST);
+      }
+      if (
+        userFind.firstName == null &&
+        userFind.lastName == null
+        // && userFind.phoneNumber
+      ) {
+        throw new NotFoundException(CONSTANT_RESPONSE.INCOMPLETE_SIGNUP);
+      }
+      if (userFind.password == null) {
+        throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
+      }
+      if (userFind && userFind.role == 'user') {
+        throw new NotFoundException("User can't login here");
+      }
+      const verifyPass = verifyPassword(loginDto.password, userFind.password);
+      if (verifyPass) {
+        if (userFind.isVerified === false) {
+          const otphash = await this.generateOtp(
+            userFind.email,
+            async (otp: any) => {
+              const modifiedTemplate = resendEmailTemplate
+                .replace(
+                  /\${name}/g,
+                  userFind.firstName + ' ' + userFind.lastName,
+                )
+                .replace(/\${otp}/g, otp);
+              await sendEmail(
+                userFind.email,
+                'Verify Email OTP',
+                modifiedTemplate,
+              );
+            },
+          );
+          return {
+            message: CONSTANT_RESPONSE.NOT_VARIFIED,
+            status: false,
+            data: {
+              verified: false,
+              hash: otphash,
+            },
+          };
+        }
+        const userObject = this.createToken(
+          { id: userFind.id, role: userFind.role },
+          userFind,
+          isEmail,
+        );
+        return {
+          data: { userObject },
+          message: CONSTANT_RESPONSE.LOGIN_SUCCESS,
+        };
+      } else {
+        throw new NotFoundException('password is incorrect');
+      }
+    } catch (error) {
+      return { message: error.message, status: false };
+    }
+  }
+
   async signin(loginDto: LoginDto) {
     try {
       let userFind = null;
@@ -340,6 +416,9 @@ export class UserService {
       }
       if (userFind.password == null) {
         throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
+      }
+      if (userFind && userFind.role == 'admin') {
+        throw new NotFoundException("Admin can't login here");
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {

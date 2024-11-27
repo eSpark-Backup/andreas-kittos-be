@@ -54,13 +54,24 @@ export class UserController {
 
   @Post('sign-in')
   @swaggerDocs({
-    summary: 'Create a new user',
+    summary: 'User Sign In',
     type: LoginDto,
-    goodResponse: { status: 201, description: 'User created successfully' },
+    goodResponse: { status: 201, description: 'User Signed In successfully' },
     badresponse: { status: 400, description: 'Bad Request' },
   })
   async signIn(@Body() loginDto: LoginDto) {
     return this.userService.signin(loginDto);
+  }
+
+  @Post('admin-sign-in')
+  @swaggerDocs({
+    summary: 'Admin Sign In',
+    type: LoginDto,
+    goodResponse: { status: 201, description: 'Admin Signed In successfully' },
+    badresponse: { status: 400, description: 'Bad Request' },
+  })
+  async adminSignIn(@Body() loginDto: LoginDto) {
+    return this.userService.adminSignin(loginDto);
   }
 
   @Post('password-reset-opt')
