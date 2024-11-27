@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
@@ -43,6 +44,7 @@ import { error } from 'console';
 import { Order } from 'src/entity/order.entity';
 import { OrderDetail } from 'src/entity/orderDetail.entity';
 import { Payment } from 'src/entity/payment.entity';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 const OTP_KEY = process.env.OTP_KEY;
 const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
 const twilioAuthToken = process.env.TWILIO_AUTH_TOKEN;
@@ -342,7 +344,7 @@ export class UserService {
         throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
       }
       if (userFind && userFind.role == 'user') {
-        throw new NotFoundException("User can't login here");
+        throw new UnauthorizedException('Only Admin can Login here');
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
@@ -418,7 +420,7 @@ export class UserService {
         throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
       }
       if (userFind && userFind.role == 'admin') {
-        throw new NotFoundException("Admin can't login here");
+        throw new UnauthorizedException("Admin can't login here");
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
       if (verifyPass) {
