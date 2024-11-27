@@ -342,7 +342,7 @@ export class UserService {
         throw new NotFoundException(CONSTANT_RESPONSE.INVALID_LOGIN);
       }
       const verifyPass = verifyPassword(loginDto.password, userFind.password);
-      if (verifyPass) {
+      if (!verifyPass) {
         if (userFind.isVerified === false) {
           const otphash = await this.generateOtp(
             userFind.email,
