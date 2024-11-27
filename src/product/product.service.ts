@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { BackblazeService } from '../backblaze/backblaze.service';
@@ -11,6 +11,7 @@ import * as url from 'url';
 import * as path from 'path';
 import { paginateResponse } from '../utils/function/pagination';
 import { CacheService } from 'src/utils/cache/cache.service';
+import { ExceptionsHandler } from '@nestjs/core/exceptions/exceptions-handler';
 
 @Injectable()
 export class ProductService {
@@ -70,6 +71,21 @@ export class ProductService {
         const generalId = await this.categoryRepository.findOne({
           where: { name: 'General' },
         });
+        if (generalId && generalId.isDeleted == true) {
+          return {
+            data: null,
+            message:
+              'Please Create General Category First to Add Products In It',
+            status: false,
+          };
+        } else if (!generalId) {
+          return {
+            data: null,
+            message:
+              'Please Create General Category First to Add Products In It',
+            status: false,
+          };
+        }
         categoryIds += ',' + generalId.id;
       }
       delete createProductDto.categoryIds;
@@ -168,6 +184,19 @@ export class ProductService {
       const generalId = await this.categoryRepository.findOne({
         where: { name: 'General' },
       });
+      if (generalId && generalId.isDeleted == true) {
+        return {
+          data: null,
+          message: 'Please Create General Category First to Add Products In It',
+          status: false,
+        };
+      } else if (!generalId) {
+        return {
+          data: null,
+          message: 'Please Create General Category First to Add Products In It',
+          status: false,
+        };
+      }
       const category = new Category();
       category.id = generalId.id;
       const product = new Product();

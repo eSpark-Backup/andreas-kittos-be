@@ -1,10 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from '../entity';
 import { Repository } from 'typeorm';
 import { CONSTANT_RESPONSE } from '../utils/constant/return.constant';
+import { HttpErrorByCode } from '@nestjs/common/utils/http-error-by-code.util';
 
 @Injectable()
 export class CategoryService {
@@ -102,11 +103,7 @@ export class CategoryService {
       };
     }
     if (findCategory.name === 'General') {
-      return {
-        data: null,
-        message: 'Cannot delete General Category',
-        status: false,
-      };
+      throw new BadRequestException('Cannot delete General Category');
     }
 
     const { affected } = await this.categoryRepository.update(id, {
