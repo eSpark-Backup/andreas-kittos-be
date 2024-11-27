@@ -71,7 +71,7 @@ jobs:
           -backend-config='bucket=${{ env.backend_s3_bucket }}' \
           -backend-config='key=docker-ecr/terraform-${{ env.ECR_REPO_NAME }}.tfstate' \
           -backend-config='dynamodb_table=${{ env.backend_dynamodb_table }}' \
-          -backend-config='role_arn=arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.backend_iam_role }}'
+          -backend-config="assume_role={role_arn=\"arn:aws:iam::${{ env.aws_account_id }}:role/${{ env.backend_iam_role }}\"}"
       working-directory: ${{ github.action_path }}
 
     - name: Create ECR repo [TerraForm apply]
