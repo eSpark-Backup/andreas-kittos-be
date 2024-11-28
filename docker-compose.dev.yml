@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - ${DEV_DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
+      - ${DOCKER_EXPOSED_PORT}:${DOCKER_APPLICATION_PORT}
   
 
 
@@ -35,18 +35,18 @@ services:
     container_name: dev_mls_db
     image: mysql:latest
     ports:
-      - ${DEV_MYSQL_PORT}:${DEV_MYSQL_PORT}
+      - ${MYSQL_PORT}:${MYSQL_PORT}
     environment:
-      - MYSQL_ROOT_PASSWORD=${DEV_MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE=${DEV_MYSQL_DATABASE}
-      - MYSQL_USER=${DEV_MYSQL_USER}
-      - MYSQL_PASSWORD=${DEV_MYSQL_PASSWORD}
-      - MYSQL_TCP_PORT=${DEV_MYSQL_PORT}
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+      - MYSQL_TCP_PORT=${MYSQL_PORT}
 
     volumes:
       - dev_mls_database:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysql", "-uroot", "-p${DEV_MYSQL_ROOT_PASSWORD}", "-h", "dev_mls_db", "-e", "USE ${DEV_MYSQL_DATABASE};"]
+      test: ["CMD", "mysql", "-uroot", "-p${MYSQL_ROOT_PASSWORD}", "-h", "dev_mls_db", "-e", "USE ${MYSQL_DATABASE};"]
       retries: 10
 
 volumes:
