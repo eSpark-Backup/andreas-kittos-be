@@ -130,8 +130,8 @@ jobs:
         ECR_REPOSITORY: ${{ env.ECR_REPO_NAME }}
         IMAGE_TAG: ${{ env.image_tag }}
       run: |
-        docker compose build
-        docker compose push
+        docker compose -f docker-compose.yml build
+        docker compose -f docker-compose.yml push
         echo "IMAGE $IMAGE_TAG is pushed to $ECR_REGISTRY/$ECR_REPOSITORY"
         echo "image_tag=$IMAGE_TAG" 
         echo "full_image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
@@ -204,6 +204,6 @@ jobs:
         DOCKER_APPLICATION_PORT: ${{ secrets.DOCKER_APPLICATION_PORT }}
       
       run: |
-        docker compose pull
-        docker compose down
-        docker compose up -d
+        docker compose -f docker-compose.yml pull
+        docker compose -f docker-compose.yml down
+        docker compose -f docker-compose.yml up -d
