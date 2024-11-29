@@ -151,6 +151,12 @@ export class ProductService {
     const productResult = await this.productRepository.findOne({
       where: { id: id, isDeleted: false },
     });
+    //change the price to price1 and price2
+    if (productResult.price) {
+      productResult['price1'] = productResult.price.split('-')[0];
+      productResult['price2'] = productResult.price.split('-')[1];
+      delete productResult.price;
+    }
     const result = productResult
       ? { data: productResult, message: CONSTANT_RESPONSE.RECORD_FOUND }
       : {
@@ -158,6 +164,7 @@ export class ProductService {
           message: CONSTANT_RESPONSE.RECORD_NOT_FOUND,
           status: false,
         };
+
     return result;
   }
 
@@ -377,12 +384,19 @@ export class ProductService {
 
     if (maxPrice != null && minPrice != null) {
       queryToGetData.andWhere(
-        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
-     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
+        `
+    CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= :maxPrice 
+    AND CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= :minPrice
+  `,
+        { maxPrice, minPrice },
       );
+
       queryToGetCount.andWhere(
-        `CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= ${maxPrice} AND 
-     CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= ${minPrice}`,
+        `
+    CAST(SUBSTRING_INDEX(product.price, '-', 1) AS DECIMAL) <= :maxPrice 
+    AND CAST(SUBSTRING_INDEX(product.price, '-', -1) AS DECIMAL) >= :minPrice
+  `,
+        { maxPrice, minPrice },
       );
     }
 
@@ -441,7 +455,7 @@ export class ProductService {
         categoryProduct.product['price2'] =
           categoryProduct.product.price.split('-')[1];
         //delete the price
-        delete categoryProduct.product.price;
+        // delete categoryProduct.product.price;
       });
     });
 

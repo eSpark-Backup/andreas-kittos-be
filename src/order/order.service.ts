@@ -103,6 +103,10 @@ export class OrderService {
     await this.orderRepository.save(order);
     await this.checkoutRepository.delete(checkout.id);
     await this.cartItemRepository.delete({ cart: checkout.cart.id });
+    order.orderDetail.forEach(async (orderDetail) => {
+      orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+      orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+    });
 
     return {
       data: order,
@@ -127,7 +131,7 @@ export class OrderService {
       throw new Error('Order not found');
     }
     if (order.orderState === orderByState.cancelled) {
-      throw new Error('Order already cancelled, you can not update status');
+      throw new Error('Order already cancelled, You can not update status');
     }
 
     if (orderState !== undefined) {
@@ -189,6 +193,16 @@ export class OrderService {
   ) {
     let userOrderData;
     let user;
+    const skip = (page - 1) * take;
+
+    const orders = this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+
+      .limit(take)
+      .offset(skip)
+      .orderBy('order.createdAt', 'DESC')
+      .select(['order.id']);
 
     const queryToGetData = this.orderRepository
       .createQueryBuilder('order')
@@ -204,24 +218,33 @@ export class OrderService {
       .leftJoinAndSelect('order.payment', 'payment')
       .leftJoinAndSelect('order.user', 'user');
 
-    const skip = (page - 1) * take;
-
     if (customerName) {
       const terms = customerName.trim().split(' ');
 
       const whereClauses = terms
-        .map(
-          (_, index) =>
-            `(user.firstName LIKE :term${index} OR user.lastName LIKE :term${index} OR user.email LIKE :term${index} OR order.orderNumber = :term${index})`,
-        )
+        .map((_, index) => {
+          // Use '=' for order number comparison and 'LIKE' for other fields
+          return `(user.firstName LIKE :term${index} OR user.lastName LIKE :term${index} OR user.email LIKE :term${index} OR order.orderNumber = :term${index})`;
+        })
         .join(' AND ');
 
-      const params = terms.reduce((acc, term, index) => {
-        acc[`term${index}`] = `%${term}%`;
-        return acc;
-      }, {});
+      const params = terms.reduce(
+        (acc, term, index) => {
+          // Check if the term is a valid number for orderNumber, otherwise use string matching
+          if (!isNaN(Number(term))) {
+            // Use exact match for numbers (orderNumber)
+            acc[`term${index}`] = Number(term);
+          } else {
+            // Use LIKE for string fields
+            acc[`term${index}`] = `%${term}%`;
+          }
+          return acc;
+        },
+        {} as Record<string, string | number>,
+      ); // Ensuring the type of params is correct
 
       queryToGetData.andWhere(whereClauses, params);
+      orders.andWhere(whereClauses, params);
       queryToGetCount.andWhere(whereClauses, params);
     }
 
@@ -230,6 +253,9 @@ export class OrderService {
       startDateObj.setHours(0, 0, 0, 0);
       console.log(startDateObj);
       queryToGetData.andWhere('order.createdAt >= :startDate', {
+        startDate: startDateObj,
+      });
+      orders.andWhere('order.createdAt >= :startDate', {
         startDate: startDateObj,
       });
       queryToGetCount.andWhere('order.createdAt >= :startDate', {
@@ -243,6 +269,9 @@ export class OrderService {
       queryToGetData.andWhere('order.createdAt <= :endDate', {
         endDate: endDateObj,
       });
+      orders.andWhere('order.createdAt <= :endDate', {
+        endDate: endDateObj,
+      });
       queryToGetCount.andWhere('order.createdAt <= :endDate', {
         endDate: endDateObj,
       });
@@ -250,6 +279,9 @@ export class OrderService {
 
     if (paymentType !== undefined) {
       queryToGetData.andWhere('payment.paymentType = :paymentType', {
+        paymentType,
+      });
+      orders.andWhere('payment.paymentType = :paymentType', {
         paymentType,
       });
       queryToGetCount.andWhere('payment.paymentType = :paymentType', {
@@ -261,6 +293,9 @@ export class OrderService {
       queryToGetData.andWhere('payment.paymentStatus = :paymentStatus', {
         paymentStatus,
       });
+      orders.andWhere('payment.paymentStatus = :paymentStatus', {
+        paymentStatus,
+      });
       queryToGetCount.andWhere('payment.paymentStatus = :paymentStatus', {
         paymentStatus,
       });
@@ -268,6 +303,8 @@ export class OrderService {
 
     if (userId !== undefined) {
       queryToGetData.andWhere('userId = :userId', { userId });
+      orders.andWhere('userId = :userId', { userId });
+
       queryToGetCount.andWhere('userId = :userId', { userId });
       const totalordersforUser = await this.orderRepository
         .createQueryBuilder('order')
@@ -305,9 +342,16 @@ export class OrderService {
       };
     }
     if (orderState !== undefined) {
-      queryToGetData.andWhere('orderState = :orderState', { orderState });
-      queryToGetCount.andWhere('orderState = :orderState', { orderState });
+      queryToGetData.andWhere('order.orderState = :orderState', { orderState });
+      orders.andWhere('order.orderState = :orderState', { orderState });
+      queryToGetCount.andWhere('order.orderState = :orderState', {
+        orderState,
+      });
     }
+    const allOrderCount = await orders.getMany();
+
+    queryToGetData.andWhereInIds(allOrderCount.map((order) => order.id));
+
     const [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
@@ -342,12 +386,23 @@ export class OrderService {
           'product.price',
           'product.productImage',
         ])
-        .limit(take)
-        .offset(skip)
+
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
     ]);
+
+    query.forEach((category) => {
+      category.orderDetail.forEach((orderDetail) => {
+        orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+        orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+        delete orderDetail.product.price;
+      });
+    });
+    //get count of orders based on skip and page
+    // First, fetch paginated orders
+
+    // Then, separately load related entities
 
     return {
       data: paginateResponseforTotal({
@@ -363,10 +418,38 @@ export class OrderService {
   }
   async cancelOrder(userId: string, orderId: string) {
     try {
+      const order = await this.orderRepository.findOne({
+        where: { id: orderId, user: { id: userId } },
+      });
+
+      if (!order) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.USER_NOT,
+        };
+      }
+      if (order.orderState === orderByState.completed) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.FAILED_Completed,
+        };
+      }
+      if (order.orderStatus.delivered) {
+        return {
+          data: null,
+          message: CONSTANT_RESPONSE.FAILED_PROCESS,
+        };
+      }
+      order.orderState = orderByState.cancelled;
+      await this.orderRepository.save(order);
+      return {
+        data: order,
+        message: CONSTANT_RESPONSE.CANCELLED,
+      };
     } catch (error) {
       return {
         data: null,
-        message: CONSTANT_RESPONSE.CANCELLED,
+        message: CONSTANT_RESPONSE.FAILED,
       };
     }
   }
@@ -376,6 +459,19 @@ export class OrderService {
     take: number,
     orderState: string,
   ) {
+    const skip = (page - 1) * take;
+
+    const orders = this.orderRepository
+      .createQueryBuilder('order')
+      .leftJoinAndSelect('order.user', 'user')
+
+      .andWhere('user.id = :userId', { userId })
+
+      .limit(take)
+      .offset(skip)
+      .orderBy('order.createdAt', 'DESC')
+      .select(['order.id']);
+
     const queryToGetData = this.orderRepository
       .createQueryBuilder('order')
       .leftJoinAndSelect('order.orderDetail', 'orderDetail')
@@ -396,9 +492,13 @@ export class OrderService {
       queryToGetCount.andWhere('order.orderState = :orderState', {
         orderState,
       });
+      orders.andWhere('order.orderState = :orderState', {
+        orderState,
+      });
     }
-    const skip = (page - 1) * take;
+    const allOrderCount = await orders.getMany();
 
+    queryToGetData.andWhereInIds(allOrderCount.map((order) => order.id));
     const [query, totalCount] = await Promise.all([
       queryToGetData
         .select([
@@ -432,12 +532,18 @@ export class OrderService {
           'product.productImage',
         ])
 
-        .limit(take)
-        .offset(skip)
         .orderBy('order.createdAt', 'DESC')
         .getMany(),
       queryToGetCount.getCount(),
     ]);
+
+    query.forEach((order) => {
+      order.orderDetail.forEach((orderDetail) => {
+        orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+        orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+        delete orderDetail.product.price;
+      });
+    });
 
     return {
       data: paginateResponse({ query, totalCount, take, page }),
@@ -459,6 +565,11 @@ export class OrderService {
     if (!order) {
       throw new Error('Order not found');
     }
+    order.orderDetail.forEach((orderDetail) => {
+      orderDetail.product['price1'] = orderDetail.product.price.split('-')[0];
+      orderDetail.product['price2'] = orderDetail.product.price.split('-')[1];
+      delete orderDetail.product.price;
+    });
     return {
       data: order,
       message: 'Order detail',
