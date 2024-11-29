@@ -102,7 +102,6 @@ jobs:
         echo "TOKEN_EXPIRY=${{ secrets.TOKEN_EXPIRY }}" >> .env
         echo "SENDGRID_API_KEY=${{ secrets.SENDGRID_API_KEY }}" >> .env
         echo "SENDGRID_EMAIL=${{ secrets.SENDGRID_EMAIL }}" >> .env
-        echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
         echo "TWILIO_ACCOUNT_SID=${{ secrets.TWILIO_ACCOUNT_SID }}" >> .env
         echo "TWILIO_AUTH_TOKEN=${{ secrets.TWILIO_AUTH_TOKEN }}" >> .env
         echo "TWILIO_PHONE_NUMBER=${{ secrets.TWILIO_PHONE_NUMBER }}" >> .env
