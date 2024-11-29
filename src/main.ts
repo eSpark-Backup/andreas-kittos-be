@@ -12,24 +12,24 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.enableCors();
   // This is the Swagger configuration that we will use later for the API documentation
-  // const config = new DocumentBuilder()
-  //   .setTitle('Andreaskittos Backend API')
-  //   .setDescription('The andreaskittos API description')
-  //   .setVersion('1.0')
-  //   .addBearerAuth(
-  //     {
-  //       type: 'http',
-  //       scheme: 'bearer',
-  //       bearerFormat: 'JWT',
-  //       name: 'JWT',
-  //       description: 'Enter JWT token',
-  //       in: 'header',
-  //     },
-  //     'jwt',
-  //   )
-  //   .build();
-  // const document = SwaggerModule.createDocument(app, config);
-  // SwaggerModule.setup('swagger', app, document);
+  const config = new DocumentBuilder()
+    .setTitle('Andreaskittos Backend API For Dev ')
+    .setDescription('The andreaskittos API description')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'jwt',
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('swagger', app, document);
   await app.listen(port);
 }
 bootstrap();
