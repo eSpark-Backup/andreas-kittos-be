@@ -203,5 +203,5 @@ jobs:
       
       run: |
         docker compose -f docker-compose.yml -f docker-compose.dev.yml pull
-        docker compose -f docker-compose.yml -f docker-compose.dev.yml down
-        docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml -p "mls_stack_dev" down
+        docker compose -f docker-compose.yml -f docker-compose.dev.yml -p "mls_stack_dev" up -d
