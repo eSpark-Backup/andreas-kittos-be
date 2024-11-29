@@ -9,7 +9,6 @@ services:
       - TOKEN_EXPIRY
       - SENDGRID_API_KEY
       - SENDGRID_EMAIL
-      - FRONTEND_URL
       - TWILIO_ACCOUNT_SID
       - TWILIO_AUTH_TOKEN
       - TWILIO_PHONE_NUMBER
@@ -43,8 +42,12 @@ services:
       - MYSQL_USER=${MYSQL_USER}
       - MYSQL_PASSWORD=${MYSQL_PASSWORD}
       - MYSQL_TCP_PORT=${MYSQL_PORT}
+
     volumes:
       - mls_database:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysql", "-uroot", "-p${MYSQL_ROOT_PASSWORD}", "-h", "mls_db", "-e", "USE ${MYSQL_DATABASE};"]
+      retries: 10
 
 volumes:
   mls_database:
