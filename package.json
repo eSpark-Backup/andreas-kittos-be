@@ -26,7 +26,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.26",
     "@nestjs/swagger": "^11.4.4",
-    "@nestjs/typeorm": "^10.0.1",
+    "@nestjs/typeorm": "^11.0.3",
     "@sendgrid/mail": "^8.1.0",
     "backblaze-b2": "^1.7.1",
     "class-transformer": "^0.5.1",
